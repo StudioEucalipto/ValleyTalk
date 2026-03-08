@@ -195,16 +195,20 @@ namespace ValleyTalk
             var npcNightStateService = new NpcNightStateService(profileService);
             var roomMoodService = new RoomMoodService();
             var sessionMemoryService = new SessionMemoryService();
+            var actionClassifier = new ConversationActionClassifier();
+            var consequenceEngine = new ConsequenceEngine(actionClassifier);
             var contextBridge = new ValleyTalkContextBridge(profileService, sessionMemoryService);
 
             SaturdaySocial = new SaturdaySocialManager(
                 Monitor,
                 Config,
                 attendanceService,
+                profileService,
                 npcNightStateService,
                 roomMoodService,
                 contextBridge,
-                sessionMemoryService);
+                sessionMemoryService,
+                consequenceEngine);
 
             helper.Events.GameLoop.DayStarted += (sender, args) => SaturdaySocial.ResetForNewDay();
             helper.Events.GameLoop.ReturnedToTitle += (sender, args) => SaturdaySocial.ResetForTitle();

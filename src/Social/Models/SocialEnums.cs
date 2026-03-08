@@ -65,4 +65,16 @@ namespace ValleyTalk.Social.Models
         Rejected,
         PrivateInvite
     }
+
+    public enum SocialActionType
+    {
+        Chat,
+        Flirt,
+        InviteDance,
+        Apologize,
+        Provoke,
+        SuggestPrivateConversation,
+        BuyDrink,
+        BuyMeal
+    }
 }
