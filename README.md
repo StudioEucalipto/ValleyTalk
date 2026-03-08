@@ -1,97 +1,67 @@
-# ValleyTalk
+# ValleyTalk Plus
 
 [![Nexus Mods](https://img.shields.io/badge/Nexus%20Mods-30319-orange)](https://www.nexusmods.com/stardewvalley/mods/30319)
-[![Version](https://img.shields.io/badge/version-1.3.0-blue)](https://github.com/dandm1/ValleyTalk/releases)
+[![Validation](https://github.com/StudioEucalipto/ValleyTalk/actions/workflows/validate.yml/badge.svg)](https://github.com/StudioEucalipto/ValleyTalk/actions/workflows/validate.yml)
 
-**Infinite dialogue for Stardew Valley** - A SMAPI mod that uses AI language models to generate dynamic, contextual conversations with NPCs.
+`ValleyTalk Plus` is a fork of `ValleyTalk` focused on lore-faithful long-form social roleplay in Stardew Valley.
 
-## Features
+The current design target is a recurring Saturday-night social session in the Stardrop Saloon, where the player can roleplay extended conversation with villagers through ValleyTalk-powered dialogue.
 
-- 🤖 **AI-Powered Dialogue**: Generate infinite, contextual conversations using various AI language models
-- 🎭 **Character Consistency**: Each NPC maintains their unique personality and speaking style
-- 🌍 **Multi-Language Support**: Translation on the fly or using prompt translation packs.
-- 📱 **Cross-Platform**: Works on PC, Mac and Linux.
-- 🔌 **Multiple AI Providers**: Support for OpenAI, Anthropic Claude, Google Gemini, Mistral, DeepSeek, and more
-- 📚 **Content Pack Support**: Full Content Patcher support and content pack for SVE.
-- ⚙️ **Highly Configurable**: Extensive configuration options through Generic Mod Config Menu
+This branch is the transition from the original ValleyTalk foundation into a more session-driven social-roleplay architecture.
 
-## Configuration
+## Direction
 
-ValleyTalk requires configuration of an AI language model provider. The mod supports:
+- ValleyTalk remains the dialogue engine.
+- Saturday-night saloon social play is the main roleplay loop.
+- NPC behavior should be driven by compact baseline traits plus compact nightly state.
+- Mature social realism is allowed, but it stays grounded and character-appropriate.
+- The simulation should stay shallow enough to fit Stardew Valley's tone and keep prompts compact.
 
-- **OpenAI** (GPT-3.5, GPT-4)
-- **Anthropic Claude**
-- **Google Gemini**
-- **Mistral AI**
-- **DeepSeek**
-- **VolcEngine**
-- **LlamaCpp** (for local models)
-- **OpenAI-Compatible APIs**
+See [docs/Architecture.md](/Users/leon/Library/CloudStorage/Dropbox/Development Projects/Stardew Valley/ValleyTalk Plus/docs/Architecture.md) for the current implementation plan.
 
-Configure your preferred provider through the mod's config file or using Generic Mod Config Menu.
+## Current foundation
 
-## Architecture
-
-The mod uses Harmony patches to intercept dialogue requests and generates contextually appropriate responses based on:
-- Character personalities and relationships
-- Current game state and events
-- Player history and interactions
-- Seasonal and temporal context
-
-### Key Components
-
-- **DialogueBuilder**: Core AI dialogue generation system
-- **Character Management**: Maintains NPC personality profiles
-- **Event History**: Tracks game events for contextual awareness
-- **LLM Integration**: Supports multiple AI provider APIs
-- **Content Packs**: Modular character and prompt system
+- existing ValleyTalk dialogue generation stack
+- new `Social` scaffolding for Saturday-session orchestration
+- seeded adult NPC saloon profile data
+- GitHub-side repository validation without requiring local tooling on this Mac
 
 ## Development
 
 ### Building from Source
 
 ```bash
-# Clone the repository
-git clone https://github.com/dandm1/ValleyTalk.git
-cd ValleyTalk
-
-# Build the project
+# Build locally if you have the game and .NET installed
 dotnet build src/ValleyTalk.csproj
 ```
+
+### Tooling note
+
+This Mac does not have Stardew Valley or the .NET SDK installed, and this repo is being kept intentionally light on local dependencies.
+
+That means:
+
+- repo edits, branching, and pushing work normally
+- GitHub can run lightweight validation workflows
+- full SMAPI compile verification still requires access to Stardew Valley assemblies, which stock GitHub runners do not provide
 
 ### Project Structure
 
 ```
-ValleyTalk/
+ValleyTalk Plus/
 ├── src/                    # Main mod source code
 │   ├── llms/              # AI provider implementations
 │   ├── config/            # Files related to mod configuration
 │   ├── Generation/        # Dialogue generation logic
+│   ├── Social/            # Saturday social-session foundation
 │   ├── Patches/           # Harmony patches
 │   ├── Interop/           # API for interaction with other mods
 │   └── UI/                # User interface components
 ├── ContentPack/           # Base content pack
 │   └── assets/            # Character bios and prompts
+├── docs/                  # Design and implementation notes
 └── Extensions/            # Mod extensions (SVE support)
 ```
-
-## API & Mod Interoperability
-
-ValleyTalk provides an API for other mods to interact with the dialogue system:
-
-```csharp
-// Example: Access the ValleyTalk interface
-var vtInterface = Helper.ModRegistry.GetApi<IValleyTalkInterface>("dandm1.ValleyTalk");
-```
-This allows other mods to temporarily override parts of the prompt for specific game characters, to update the results based on that mod's context.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
 
 ## License
 
@@ -108,7 +78,3 @@ This project is available under LGPL v3.
 - Uses Harmony for runtime patching
 - Stardew Valley by ConcernedApe
 - Community translations and feedback
-
----
-
-*Enhance your Stardew Valley experience with endless, personalized conversations!*

@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>ValleyTalk</AssemblyName>
+    <AssemblyName>ValleyTalkPlus</AssemblyName>
     <RootNamespace>ValleyTalk</RootNamespace>
-    <Version>1.4.0</Version>
+    <Version>0.2.0</Version>
     <TargetFrameworks>net6.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <GamePath>/home/david/snap/steam/common/.local/share/Steam/steamapps/common/Stardew Valley</GamePath>
     <EnableHarmony>true</EnableHarmony>
     <Platforms>AnyCPU;x64</Platforms>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <ModFolderName>ValleyTalk</ModFolderName>
+    <ModFolderName>ValleyTalk Plus</ModFolderName>
     <BundleExtraAssemblies>ThirdParty, System</BundleExtraAssemblies>
     <!-- Android compatibility settings -->
     <AndroidUseAapt2>true</AndroidUseAapt2>
@@ -31,6 +31,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ContentPacks Include="../ContentPack" FolderName="[CP] ValleyTalk Base" Version="$(Version)" />
+    <ContentPacks Include="../ContentPack" FolderName="[CP] ValleyTalk Plus Base" Version="$(Version)" />
   </ItemGroup>
 </Project>

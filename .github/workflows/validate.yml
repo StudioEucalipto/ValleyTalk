@@ -1,0 +1,67 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          failures = []
+          targets = [
+              Path("src/manifest.json"),
+              Path("src/config.json"),
+              Path("ContentPack/manifest.json"),
+              Path("ContentPack/config.json"),
+              Path("Extensions/ValleyTalk for SVE/manifest.json"),
+              Path("src/assets/social/NpcProfiles.vanilla.json"),
+          ]
+
+          for path in targets:
+              try:
+                  json.loads(path.read_text(encoding="utf-8-sig"))
+              except Exception as ex:
+                  failures.append(f"{path}: {ex}")
+
+          if failures:
+              print("JSON validation failed:")
+              for failure in failures:
+                  print(failure)
+              raise SystemExit(1)
+
+          print("All JSON files parsed successfully.")
+          PY
+
+  validate-manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SMAPI manifests
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          required = ["Name", "Author", "Version", "Description", "UniqueID", "MinimumApiVersion"]
+          manifest_paths = [Path("src/manifest.json"), Path("ContentPack/manifest.json"), Path("Extensions/ValleyTalk for SVE/manifest.json")]
+
+          for manifest_path in manifest_paths:
+              data = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+              missing = [key for key in required if key not in data]
+              if missing:
+                  raise SystemExit(f"{manifest_path} is missing required keys: {', '.join(missing)}")
+
+          print("Manifest structure looks valid.")
+          PY

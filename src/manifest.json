@@ -1,10 +1,10 @@
 ﻿{
-  "Name": "ValleyTalk",
-  "Author": "dandm1",
-  "Version": "1.4.0",
-  "Description": "Infinite dialogue for Stardew Valley",
-  "UniqueID": "dandm1.ValleyTalk",
-  "EntryDll": "ValleyTalk.dll",
+  "Name": "ValleyTalk Plus",
+  "Author": "StudioEucalipto",
+  "Version": "0.2.0",
+  "Description": "Lore-faithful long-form saloon social roleplay built on ValleyTalk.",
+  "UniqueID": "StudioEucalipto.ValleyTalkPlus",
+  "EntryDll": "ValleyTalkPlus.dll",
   "MinimumApiVersion": "4.1.0",
-  "UpdateKeys": [ "Nexus:30319" ]
+  "UpdateKeys": []
 }
