@@ -1,0 +1,122 @@
+[
+  {
+    "Id": "bar-stool-1",
+    "Area": "Bar",
+    "Activity": "Drinking",
+    "GroupId": "bar",
+    "TileX": 24,
+    "TileY": 15,
+    "FacingDirection": 0,
+    "Priority": 1
+  },
+  {
+    "Id": "bar-stool-2",
+    "Area": "Bar",
+    "Activity": "Drinking",
+    "GroupId": "bar",
+    "TileX": 25,
+    "TileY": 15,
+    "FacingDirection": 0,
+    "Priority": 1
+  },
+  {
+    "Id": "bar-stool-3",
+    "Area": "Bar",
+    "Activity": "Drinking",
+    "GroupId": "bar",
+    "TileX": 26,
+    "TileY": 15,
+    "FacingDirection": 0,
+    "Priority": 1
+  },
+  {
+    "Id": "dance-floor-1",
+    "Area": "Dance Floor",
+    "Activity": "Dancing",
+    "GroupId": "dance-floor",
+    "TileX": 19,
+    "TileY": 17,
+    "FacingDirection": 2,
+    "Priority": 1
+  },
+  {
+    "Id": "dance-floor-2",
+    "Area": "Dance Floor",
+    "Activity": "Dancing",
+    "GroupId": "dance-floor",
+    "TileX": 20,
+    "TileY": 17,
+    "FacingDirection": 2,
+    "Priority": 1
+  },
+  {
+    "Id": "jukebox-1",
+    "Area": "Jukebox Corner",
+    "Activity": "Lingering",
+    "GroupId": "jukebox",
+    "TileX": 17,
+    "TileY": 16,
+    "FacingDirection": 1,
+    "Priority": 2
+  },
+  {
+    "Id": "window-table-1",
+    "Area": "Front Table",
+    "Activity": "Chatting",
+    "GroupId": "front-table",
+    "TileX": 12,
+    "TileY": 17,
+    "FacingDirection": 2,
+    "Priority": 2
+  },
+  {
+    "Id": "window-table-2",
+    "Area": "Front Table",
+    "Activity": "Chatting",
+    "GroupId": "front-table",
+    "TileX": 13,
+    "TileY": 17,
+    "FacingDirection": 2,
+    "Priority": 2
+  },
+  {
+    "Id": "back-table-1",
+    "Area": "Back Table",
+    "Activity": "Eating",
+    "GroupId": "back-table",
+    "TileX": 9,
+    "TileY": 14,
+    "FacingDirection": 2,
+    "Priority": 2
+  },
+  {
+    "Id": "back-table-2",
+    "Area": "Back Table",
+    "Activity": "Eating",
+    "GroupId": "back-table",
+    "TileX": 10,
+    "TileY": 14,
+    "FacingDirection": 2,
+    "Priority": 2
+  },
+  {
+    "Id": "fireplace-1",
+    "Area": "Fireplace Corner",
+    "Activity": "Brooding",
+    "GroupId": "fireplace",
+    "TileX": 5,
+    "TileY": 18,
+    "FacingDirection": 1,
+    "Priority": 3
+  },
+  {
+    "Id": "fireplace-2",
+    "Area": "Fireplace Corner",
+    "Activity": "Chatting",
+    "GroupId": "fireplace",
+    "TileX": 6,
+    "TileY": 18,
+    "FacingDirection": 1,
+    "Priority": 3
+  }
+]

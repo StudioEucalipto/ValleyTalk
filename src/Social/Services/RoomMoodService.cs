@@ -1,19 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ValleyTalk.Social.Models;
 
 namespace ValleyTalk.Social.Services
 {
     public class RoomMoodService : IRoomMoodService
     {
-        public RoomMoodState BuildInitialRoomMood(AttendanceRoll attendance)
+        public RoomMoodState BuildInitialRoomMood(AttendanceRoll attendance, PlacementPlan placementPlan)
         {
             var vibe = attendance.SelectedNpcNames.Count >= 6 ? RoomVibe.Lively : RoomVibe.Cozy;
             return new RoomMoodState
             {
                 AttendanceSize = attendance.SelectedNpcNames.Count,
                 Vibe = vibe,
-                VisibleGroups = this.BuildVisibleGroups(attendance.SelectedNpcNames),
+                VisibleGroups = this.BuildVisibleGroups(placementPlan),
                 Summary = this.BuildSummary(vibe, attendance.SelectedNpcNames.Count)
             };
         }
@@ -53,23 +54,33 @@ namespace ValleyTalk.Social.Services
             {
                 AttendanceSize = session.Attendance.SelectedNpcNames.Count,
                 Vibe = vibe,
-                VisibleGroups = this.BuildVisibleGroups(session.Attendance.SelectedNpcNames),
+                VisibleGroups = this.BuildVisibleGroups(session.PlacementPlan),
                 Summary = this.BuildSummary(vibe, session.Attendance.SelectedNpcNames.Count)
             };
         }
 
-        private List<string> BuildVisibleGroups(IReadOnlyList<string> names)
+        private List<string> BuildVisibleGroups(PlacementPlan placementPlan)
         {
             var groups = new List<string>();
-            for (var index = 0; index < names.Count; index += 2)
+            var groupedPlacements = placementPlan.Placements
+                .GroupBy(placement => placement.GroupId)
+                .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var group in groupedPlacements)
             {
-                if (index + 1 < names.Count)
+                var names = group.Select(placement => placement.NpcName).ToList();
+                if (names.Count == 0)
                 {
-                    groups.Add(names[index] + " and " + names[index + 1]);
+                    continue;
+                }
+
+                if (names.Count == 1)
+                {
+                    groups.Add(names[0] + " in the " + group.First().Area.ToLowerInvariant());
                 }
                 else
                 {
-                    groups.Add(names[index] + " on their own");
+                    groups.Add(string.Join(", ", names) + " together in the " + group.First().Area.ToLowerInvariant());
                 }
             }
 

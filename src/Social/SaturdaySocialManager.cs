@@ -15,6 +15,7 @@ namespace ValleyTalk.Social
         private readonly IAttendanceService attendanceService;
         private readonly INpcProfileService profileService;
         private readonly INpcNightStateService npcNightStateService;
+        private readonly IPlacementPlanService placementPlanService;
         private readonly IRoomMoodService roomMoodService;
         private readonly IValleyTalkContextBridge contextBridge;
         private readonly ISessionMemoryService sessionMemoryService;
@@ -29,6 +30,7 @@ namespace ValleyTalk.Social
             IAttendanceService attendanceService,
             INpcProfileService profileService,
             INpcNightStateService npcNightStateService,
+            IPlacementPlanService placementPlanService,
             IRoomMoodService roomMoodService,
             IValleyTalkContextBridge contextBridge,
             ISessionMemoryService sessionMemoryService,
@@ -39,6 +41,7 @@ namespace ValleyTalk.Social
             this.attendanceService = attendanceService;
             this.profileService = profileService;
             this.npcNightStateService = npcNightStateService;
+            this.placementPlanService = placementPlanService;
             this.roomMoodService = roomMoodService;
             this.contextBridge = contextBridge;
             this.sessionMemoryService = sessionMemoryService;
@@ -172,7 +175,8 @@ namespace ValleyTalk.Social
         {
             var attendance = this.attendanceService.RollAttendance(this.config.SaturdaySocialMinAttendance, this.config.SaturdaySocialMaxAttendance);
             var nightStates = this.npcNightStateService.BuildNightStates(attendance.SelectedNpcNames);
-            var roomMood = this.roomMoodService.BuildInitialRoomMood(attendance);
+            var placementPlan = this.placementPlanService.BuildPlan(attendance, nightStates);
+            var roomMood = this.roomMoodService.BuildInitialRoomMood(attendance, placementPlan);
 
             this.currentSession = new SocialSession
             {
@@ -180,6 +184,7 @@ namespace ValleyTalk.Social
                 StartedAtTime = Game1.timeOfDay,
                 Attendance = attendance,
                 RoomMood = roomMood,
+                PlacementPlan = placementPlan,
                 NightStates = nightStates
             };
 

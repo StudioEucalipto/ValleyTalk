@@ -9,6 +9,7 @@ namespace ValleyTalk.Social.Models
         public string Scene { get; set; } = string.Empty;
         public string PersonalitySummary { get; set; } = string.Empty;
         public string NightStateSummary { get; set; } = string.Empty;
+        public string PositionSummary { get; set; } = string.Empty;
         public string RoomSummary { get; set; } = string.Empty;
         public string RelationshipSummary { get; set; } = string.Empty;
         public List<string> RecentVisibleBeats { get; set; } = new List<string>();
@@ -20,6 +21,10 @@ namespace ValleyTalk.Social.Models
             builder.AppendLine("NPC: " + this.NpcName);
             builder.AppendLine("Baseline: " + this.PersonalitySummary);
             builder.AppendLine("Tonight: " + this.NightStateSummary);
+            if (!string.IsNullOrWhiteSpace(this.PositionSummary))
+            {
+                builder.AppendLine("Position: " + this.PositionSummary);
+            }
             builder.AppendLine("Room: " + this.RoomSummary);
 
             if (!string.IsNullOrWhiteSpace(this.RelationshipSummary))

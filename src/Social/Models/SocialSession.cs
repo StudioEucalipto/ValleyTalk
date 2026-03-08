@@ -10,6 +10,7 @@ namespace ValleyTalk.Social.Models
         public bool ClockFrozen { get; set; }
         public AttendanceRoll Attendance { get; set; } = new AttendanceRoll();
         public RoomMoodState RoomMood { get; set; } = new RoomMoodState();
+        public PlacementPlan PlacementPlan { get; set; } = new PlacementPlan();
         public Dictionary<string, NpcNightState> NightStates { get; set; } = new Dictionary<string, NpcNightState>();
         public List<InteractionRecord> Memory { get; set; } = new List<InteractionRecord>();
     }

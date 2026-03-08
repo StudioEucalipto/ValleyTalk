@@ -25,6 +25,7 @@ jobs:
               Path("ContentPack/config.json"),
               Path("Extensions/ValleyTalk for SVE/manifest.json"),
               Path("src/assets/social/NpcProfiles.vanilla.json"),
+              Path("src/assets/social/SaloonSpots.vanilla.json"),
           ]
 
           for path in targets:

@@ -37,6 +37,14 @@ namespace ValleyTalk.Social.Services
                 };
             }
 
+            var placement = session.PlacementPlan.Placements.FirstOrDefault(candidate => candidate.NpcName == npcName);
+            var sameGroup = placement == null
+                ? new List<string>()
+                : session.PlacementPlan.Placements
+                    .Where(candidate => candidate.GroupId == placement.GroupId && candidate.NpcName != npcName)
+                    .Select(candidate => candidate.NpcName)
+                    .ToList();
+
             return new ValleyTalkPromptContext
             {
                 NpcName = npcName,
@@ -48,6 +56,11 @@ namespace ValleyTalk.Social.Services
                 NightStateSummary =
                     "Mood " + nightState.Mood + ", buzz " + nightState.BuzzLevel + ", player heat " + nightState.PlayerHeat + ", openness " +
                     nightState.Openness + ", currently " + nightState.CurrentActivity + ", last beat " + nightState.LastInteractionBeat + ".",
+                PositionSummary = placement == null
+                    ? string.Empty
+                    : profile.Name + " is in the " + placement.Area.ToLowerInvariant() + (sameGroup.Count > 0
+                        ? " with " + string.Join(", ", sameGroup) + "."
+                        : " on their own."),
                 RoomSummary = session.RoomMood.Summary + " Visible groupings: " + string.Join(", ", session.RoomMood.VisibleGroups) + ".",
                 RelationshipSummary =
                     "Existing commitments matter and should influence loyalty, secrecy, jealousy, guilt, and social risk.",
