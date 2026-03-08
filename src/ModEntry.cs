@@ -5,6 +5,8 @@ using StardewModdingAPI.Events;
 using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
+using ValleyTalk.Social;
+using ValleyTalk.Social.Services;
 namespace ValleyTalk
 {
     public partial class ModEntry : Mod
@@ -12,6 +14,7 @@ namespace ValleyTalk
         public static IMonitor SMonitor;
         public static IModHelper SHelper { get; private set; }
         public static ModConfig Config;
+        public static SaturdaySocialManager SaturdaySocial { get; private set; }
         public static Dictionary<string, Type> LlmMap
         {
             get
@@ -151,6 +154,7 @@ namespace ValleyTalk
             Llm.SetLlm(llmType, modelName: Config.ModelName, apiKey: Config.ApiKey, url: Config.ServerAddress, promptFormat: Config.PromptFormat);
 
             DialogueBuilder.Instance.Config = Config;
+            InitializeSaturdaySocial(helper);
 
             CheckContentPacks();
 
@@ -182,6 +186,33 @@ namespace ValleyTalk
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
             ModConfigMenu.Register(this);
+        }
+
+        private void InitializeSaturdaySocial(IModHelper helper)
+        {
+            var profileService = new NpcProfileService(helper, Monitor);
+            var attendanceService = new AttendanceService(profileService);
+            var npcNightStateService = new NpcNightStateService(profileService);
+            var roomMoodService = new RoomMoodService();
+            var contextBridge = new ValleyTalkContextBridge(profileService);
+
+            SaturdaySocial = new SaturdaySocialManager(
+                Monitor,
+                Config,
+                attendanceService,
+                npcNightStateService,
+                roomMoodService,
+                contextBridge);
+
+            helper.Events.GameLoop.DayStarted += (sender, args) => SaturdaySocial.ResetForNewDay();
+            helper.Events.GameLoop.ReturnedToTitle += (sender, args) => SaturdaySocial.ResetForTitle();
+            helper.Events.Player.Warped += (sender, args) =>
+            {
+                if (args.IsLocalPlayer)
+                {
+                    SaturdaySocial.HandleWarp(args.NewLocation);
+                }
+            };
         }
     }
 }

@@ -218,6 +218,7 @@ public class Prompts
             DefaultOrOverride("MarriageFeelings", GetMarriageFeelings, prompt);
         }
         DefaultOrOverride("Location", GetLocation, prompt);
+        DefaultOrOverride("SaturdaySocial", GetSaturdaySocial, prompt);
         DefaultOrOverride("Trinkets", GetTrinkets, prompt);
         DefaultOrOverride("RecentEvents", GetRecentEvents, prompt);
 
@@ -235,6 +236,22 @@ public class Prompts
         DefaultOrOverride("CurrentConversation", GetCurrentConversation, prompt);
 
         return prompt.ToString();
+    }
+
+    private void GetSaturdaySocial(StringBuilder prompt)
+    {
+        if (ModEntry.SaturdaySocial == null)
+        {
+            return;
+        }
+
+        if (!ModEntry.SaturdaySocial.TryGetPromptContext(Character.StardewNpc, out var socialContext))
+        {
+            return;
+        }
+
+        prompt.AppendLine("### Saturday Saloon Social");
+        prompt.AppendLine(socialContext);
     }
 
     private void GetPreoccupation(StringBuilder prompt)

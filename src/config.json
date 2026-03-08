@@ -12,6 +12,10 @@
   "MarriageFrequency": 4,
   "GiftFrequency": 4,
   "TypedResponses": "With Generated",
+  "EnableSaturdaySocial": true,
+  "SaturdaySocialStartTime": 1900,
+  "SaturdaySocialMinAttendance": 4,
+  "SaturdaySocialMaxAttendance": 8,
   "DisableCharacters": "",
   "InitiateTypedDialogueKey": "LeftAlt",
   "SupressConnectionCheck": false

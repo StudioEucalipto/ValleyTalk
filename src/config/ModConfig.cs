@@ -21,6 +21,10 @@ namespace ValleyTalk
         public int MarriageFrequency { get; set; } = 4;
         public int GiftFrequency { get; set; } = 4;
         public string TypedResponses { get; set; } = "With Generated";
+        public bool EnableSaturdaySocial { get; set; } = true;
+        public int SaturdaySocialStartTime { get; set; } = 1900;
+        public int SaturdaySocialMinAttendance { get; set; } = 4;
+        public int SaturdaySocialMaxAttendance { get; set; } = 8;
         public string DisableCharacters
         {
             get => disableCharacters;

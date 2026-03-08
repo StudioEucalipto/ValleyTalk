@@ -11,7 +11,7 @@ namespace ValleyTalk.Social.Services
     {
         private readonly Dictionary<string, NpcProfile> profiles;
 
-        public NpcProfileService(IModHelper helper, IMonitor monitor, string relativeAssetPath = "src/assets/social/NpcProfiles.vanilla.json")
+        public NpcProfileService(IModHelper helper, IMonitor monitor, string relativeAssetPath = "assets/social/NpcProfiles.vanilla.json")
         {
             var assetPath = Path.Combine(helper.DirectoryPath, relativeAssetPath);
             var loadedProfiles = helper.Data.ReadJsonFile<List<NpcProfile>>(assetPath) ?? new List<NpcProfile>();

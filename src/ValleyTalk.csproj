@@ -29,6 +29,9 @@
       <Link>%(Filename)%(Extension)</Link> 
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="assets/**/*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ContentPacks Include="../ContentPack" FolderName="[CP] ValleyTalk Plus Base" Version="$(Version)" />
