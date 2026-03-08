@@ -7,10 +7,12 @@ namespace ValleyTalk.Social.Services
     public class ValleyTalkContextBridge : IValleyTalkContextBridge
     {
         private readonly INpcProfileService profileService;
+        private readonly ISessionMemoryService sessionMemoryService;
 
-        public ValleyTalkContextBridge(INpcProfileService profileService)
+        public ValleyTalkContextBridge(INpcProfileService profileService, ISessionMemoryService sessionMemoryService)
         {
             this.profileService = profileService;
+            this.sessionMemoryService = sessionMemoryService;
         }
 
         public ValleyTalkPromptContext BuildPromptContext(SocialSession session, string npcName)
@@ -46,10 +48,10 @@ namespace ValleyTalk.Social.Services
                 NightStateSummary =
                     "Mood " + nightState.Mood + ", buzz " + nightState.BuzzLevel + ", player heat " + nightState.PlayerHeat + ", openness " +
                     nightState.Openness + ", currently " + nightState.CurrentActivity + ", last beat " + nightState.LastInteractionBeat + ".",
-                RoomSummary = session.RoomMood.Summary,
+                RoomSummary = session.RoomMood.Summary + " Visible groupings: " + string.Join(", ", session.RoomMood.VisibleGroups) + ".",
                 RelationshipSummary =
                     "Existing commitments matter and should influence loyalty, secrecy, jealousy, guilt, and social risk.",
-                RecentVisibleBeats = session.Memory.Select(record => record.Summary).TakeLast(4).ToList()
+                RecentVisibleBeats = this.sessionMemoryService.GetRecentVisible(session, npcName, 4).Select(record => record.Summary).ToList()
             };
         }
     }

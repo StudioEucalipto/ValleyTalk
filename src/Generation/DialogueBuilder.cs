@@ -102,6 +102,10 @@ namespace ValleyTalk
             context.Accept = gift;
             context.GiftTaste = taste;
             LastContext = context;
+            if (ModEntry.SaturdaySocial != null)
+            {
+                ModEntry.SaturdaySocial.NoteGift(instance, gift, taste);
+            }
             var theLine = await character.CreateBasicDialogue(context);
             string formattedLine = FormatLine(theLine);
             var newDialogue = new Dialogue(instance, $"Accept_{gift.Name}", formattedLine);
@@ -327,6 +331,10 @@ namespace ValleyTalk
             // Store whether the last line was from the player to help the LLM format responses appropriately
             context.LastLineIsPlayerInput = isPlayerLine;
             character.AddConversation(fullHistory, Game1.year, Game1.season, Game1.dayOfMonth, Game1.timeOfDay);
+            if (ModEntry.SaturdaySocial != null && !string.IsNullOrWhiteSpace(newDialogue))
+            {
+                ModEntry.SaturdaySocial.NoteConversation(otherNpc, newDialogue, isPlayerLine);
+            }
         }
 
         internal bool PatchNpc(NPC n,int probability=4,bool retainResult=false)
