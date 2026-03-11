@@ -84,9 +84,9 @@ namespace ValleyTalk.Social.Services
                     : "Committed to " + relationshipContext.CommittedPartnerName + ", so secrecy and guilt still matter.");
             }
 
-            if (relationshipContext.JealousyRiskNpcNames.Count > 0)
+            if (!string.IsNullOrWhiteSpace(relationshipContext.LikelyObserverName))
             {
-                pieces.Add("Possible observers who may react: " + string.Join(", ", relationshipContext.JealousyRiskNpcNames) + ".");
+                pieces.Add("One nearby person who may notice: " + relationshipContext.LikelyObserverName + ".");
             }
 
             pieces.Add("Social risk tonight is " + relationshipContext.SocialRiskLevel + ".");

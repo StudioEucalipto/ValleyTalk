@@ -37,26 +37,24 @@ namespace ValleyTalk.Social.Services
                     .Contains(context.CommittedPartnerName, StringComparer.OrdinalIgnoreCase);
             }
 
-            context.JealousyRiskNpcNames = session.NightStates.Values
-                .Where(state => !string.Equals(state.NpcName, npcName, StringComparison.OrdinalIgnoreCase))
-                .Where(state => state.PlayerHeat >= PlayerHeat.Interested)
-                .OrderByDescending(state => sameGroupNames.Contains(state.NpcName))
-                .ThenByDescending(state => state.PlayerHeat)
-                .ThenByDescending(state => state.Openness)
-                .Select(state => state.NpcName)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Take(3)
-                .ToList();
-
             if (context.CommittedPartnerPresent && !string.IsNullOrWhiteSpace(context.CommittedPartnerName))
             {
-                context.JealousyRiskNpcNames.RemoveAll(name => string.Equals(name, context.CommittedPartnerName, StringComparison.OrdinalIgnoreCase));
-                context.JealousyRiskNpcNames.Insert(0, context.CommittedPartnerName);
+                context.LikelyObserverName = context.CommittedPartnerName;
+            }
+            else
+            {
+                context.LikelyObserverName = session.NightStates.Values
+                    .Where(state => !string.Equals(state.NpcName, npcName, StringComparison.OrdinalIgnoreCase))
+                    .Where(state => sameGroupNames.Contains(state.NpcName))
+                    .Where(state => state.PlayerHeat == PlayerHeat.Attracted)
+                    .OrderByDescending(state => state.Openness)
+                    .Select(state => state.NpcName)
+                    .FirstOrDefault() ?? string.Empty;
             }
 
-            context.SocialRiskLevel = context.CommittedPartnerPresent || context.JealousyRiskNpcNames.Count >= 2
+            context.SocialRiskLevel = context.CommittedPartnerPresent
                 ? "high"
-                : context.JealousyRiskNpcNames.Count == 1 || !string.IsNullOrWhiteSpace(context.CommittedPartnerName)
+                : !string.IsNullOrWhiteSpace(context.LikelyObserverName) || !string.IsNullOrWhiteSpace(context.CommittedPartnerName)
                     ? "medium"
                     : "low";
 
@@ -70,50 +68,51 @@ namespace ValleyTalk.Social.Services
                 return Array.Empty<InteractionRecord>();
             }
 
-            if (outcome.Beat != InteractionBeat.Flirted
-                && outcome.Beat != InteractionBeat.Danced
-                && outcome.Beat != InteractionBeat.PrivateInvite
-                && outcome.Beat != InteractionBeat.GiftedDrink)
+            if (string.IsNullOrWhiteSpace(relationshipContext.LikelyObserverName))
             {
                 return Array.Empty<InteractionRecord>();
             }
 
-            var records = new List<InteractionRecord>();
-            foreach (var observerName in relationshipContext.JealousyRiskNpcNames.Distinct(StringComparer.OrdinalIgnoreCase).Take(2))
+            if (outcome.Beat != InteractionBeat.Flirted
+                && outcome.Beat != InteractionBeat.PrivateInvite)
             {
-                if (!session.NightStates.TryGetValue(observerName, out var observerState))
-                {
-                    continue;
-                }
+                return Array.Empty<InteractionRecord>();
+            }
 
-                if (!this.profileService.TryGetProfile(observerName, out var observerProfile))
-                {
-                    continue;
-                }
+            var observerName = relationshipContext.LikelyObserverName;
+            if (!session.NightStates.TryGetValue(observerName, out var observerState))
+            {
+                return Array.Empty<InteractionRecord>();
+            }
 
-                observerState.LastInteractionBeat = InteractionBeat.Jealous;
-                observerState.CurrentActivity = SocialActivity.Brooding;
-                observerState.Openness = OpennessLevel.Closed;
-                observerState.PlayerHeat = LowerHeat(observerState.PlayerHeat);
-                observerState.Mood = observerProfile.Temper >= 4 || string.Equals(observerName, relationshipContext.CommittedPartnerName, StringComparison.OrdinalIgnoreCase)
-                    ? MoodState.Irritated
-                    : MoodState.Guarded;
+            if (!this.profileService.TryGetProfile(observerName, out var observerProfile))
+            {
+                return Array.Empty<InteractionRecord>();
+            }
 
-                records.Add(new InteractionRecord
+            observerState.LastInteractionBeat = InteractionBeat.Jealous;
+            observerState.Openness = observerState.Openness == OpennessLevel.Bold ? OpennessLevel.Open : OpennessLevel.Closed;
+            observerState.PlayerHeat = string.Equals(observerName, relationshipContext.CommittedPartnerName, StringComparison.OrdinalIgnoreCase)
+                ? LowerHeat(observerState.PlayerHeat)
+                : observerState.PlayerHeat;
+            observerState.Mood = string.Equals(observerName, relationshipContext.CommittedPartnerName, StringComparison.OrdinalIgnoreCase)
+                ? (observerProfile.Temper >= 4 ? MoodState.Irritated : MoodState.Guarded)
+                : MoodState.Guarded;
+
+            return new[]
+            {
+                new InteractionRecord
                 {
                     TimeOfDay = Game1.timeOfDay,
                     NpcName = observerName,
-                    RelatedNpcName = targetProfile.Name,
                     Action = "Observed",
                     ResultBeat = InteractionBeat.Jealous,
                     Summary = string.Equals(observerName, relationshipContext.CommittedPartnerName, StringComparison.OrdinalIgnoreCase)
-                        ? observerName + " noticed the exchange with " + targetProfile.Name + " and looked openly jealous."
-                        : observerName + " looked stung watching the farmer with " + targetProfile.Name + ".",
-                    VisibleToRoom = true
-                });
-            }
-
-            return records;
+                        ? observerName + " noticed the exchange with " + targetProfile.Name + " and went quiet."
+                        : observerName + " seemed to notice the exchange with " + targetProfile.Name + ".",
+                    VisibleToRoom = false
+                }
+            };
         }
 
         private string GetPlayerRelationshipStatus(string npcName)

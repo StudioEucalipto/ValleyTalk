@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace ValleyTalk.Social.Models
 {
     public class SocialRelationshipContext
@@ -8,7 +6,7 @@ namespace ValleyTalk.Social.Models
         public string PlayerRelationshipStatus { get; set; } = "acquainted";
         public string CommittedPartnerName { get; set; } = string.Empty;
         public bool CommittedPartnerPresent { get; set; }
-        public List<string> JealousyRiskNpcNames { get; set; } = new List<string>();
+        public string LikelyObserverName { get; set; } = string.Empty;
         public string SocialRiskLevel { get; set; } = "low";
     }
 }

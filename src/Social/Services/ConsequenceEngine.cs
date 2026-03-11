@@ -28,11 +28,11 @@ namespace ValleyTalk.Social.Services
                     {
                         outcome.Beat = InteractionBeat.Rejected;
                         outcome.Summary = relationshipContext.CommittedPartnerPresent
-                            ? "The farmer flirted with " + profile.Name + ", but " + profile.Name + " pulled back and glanced toward " + relationshipContext.CommittedPartnerName + "."
-                            : profile.Name + " shut the flirtation down and kept some distance.";
-                        outcome.VisibleToRoom = relationshipContext.CommittedPartnerPresent;
+                            ? profile.Name + " answered the flirt carefully and let it go when " + relationshipContext.CommittedPartnerName + " stayed nearby."
+                            : profile.Name + " did not really invite the flirt to go further.";
+                        outcome.VisibleToRoom = false;
                         nightState.Mood = MoodState.Guarded;
-                        nightState.Openness = OpennessLevel.Closed;
+                        nightState.Openness = nightState.Openness == OpennessLevel.Bold ? OpennessLevel.Open : OpennessLevel.Closed;
                         nightState.PlayerHeat = LowerHeat(nightState.PlayerHeat);
                         break;
                     }
@@ -54,10 +54,10 @@ namespace ValleyTalk.Social.Services
                     if (ShouldRejectInvitation(profile, nightState, relationshipContext))
                     {
                         outcome.Beat = InteractionBeat.Rejected;
-                        outcome.Summary = profile.Name + " refused to make a scene on the dance floor.";
-                        outcome.VisibleToRoom = true;
+                        outcome.Summary = profile.Name + " sidestepped the dance invitation without making it a scene.";
+                        outcome.VisibleToRoom = false;
                         nightState.Mood = MoodState.Guarded;
-                        nightState.CurrentActivity = SocialActivity.Brooding;
+                        nightState.CurrentActivity = SocialActivity.Chatting;
                         break;
                     }
 
@@ -94,13 +94,13 @@ namespace ValleyTalk.Social.Services
                     break;
 
                 case SocialActionType.SuggestPrivateConversation:
-                    if (relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 4 && nightState.BuzzLevel != BuzzLevel.Drunk)
+                    if (ShouldRejectPrivateConversation(profile, nightState, relationshipContext))
                     {
                         outcome.Beat = InteractionBeat.Rejected;
-                        outcome.Summary = profile.Name + " refused the private invitation with the room watching.";
-                        outcome.VisibleToRoom = true;
+                        outcome.Summary = profile.Name + " let the private invitation pass and stayed out in the room.";
+                        outcome.VisibleToRoom = false;
                         nightState.Mood = MoodState.Guarded;
-                        nightState.Openness = OpennessLevel.Closed;
+                        nightState.Openness = OpennessLevel.Open;
                         break;
                     }
 
@@ -132,10 +132,9 @@ namespace ValleyTalk.Social.Services
             }
 
             nightState.LastInteractionBeat = outcome.Beat;
-            if (nightState.CurrentActivity != SocialActivity.Dancing
-                && nightState.CurrentActivity != SocialActivity.Brooding)
+            if (nightState.CurrentActivity != SocialActivity.Dancing)
             {
-                nightState.CurrentActivity = action == SocialActionType.SuggestPrivateConversation
+                nightState.CurrentActivity = outcome.Beat == InteractionBeat.PrivateInvite
                     ? SocialActivity.Lingering
                     : SocialActivity.Chatting;
             }
@@ -183,25 +182,36 @@ namespace ValleyTalk.Social.Services
 
         private static bool ShouldRejectFlirt(NpcProfile profile, NpcNightState nightState, SocialRelationshipContext relationshipContext)
         {
-            if (relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 4 && nightState.BuzzLevel <= BuzzLevel.Buzzed)
+            if (relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 5 && nightState.BuzzLevel <= BuzzLevel.Buzzed)
             {
                 return true;
             }
 
-            return profile.Guardedness >= 4
+            return profile.Guardedness >= 5
                 && nightState.BuzzLevel == BuzzLevel.Sober
-                && nightState.PlayerHeat <= PlayerHeat.Neutral;
+                && nightState.PlayerHeat == PlayerHeat.Negative;
         }
 
         private static bool ShouldRejectInvitation(NpcProfile profile, NpcNightState nightState, SocialRelationshipContext relationshipContext)
         {
-            if (relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 4 && nightState.BuzzLevel != BuzzLevel.Drunk)
+            if (relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 5 && nightState.BuzzLevel <= BuzzLevel.Tipsy)
             {
                 return true;
             }
 
-            return nightState.PlayerHeat == PlayerHeat.Negative
-                || (profile.Guardedness >= 4 && nightState.PlayerHeat <= PlayerHeat.Neutral);
+            return nightState.PlayerHeat == PlayerHeat.Negative;
+        }
+
+        private static bool ShouldRejectPrivateConversation(NpcProfile profile, NpcNightState nightState, SocialRelationshipContext relationshipContext)
+        {
+            if (relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 5 && nightState.BuzzLevel <= BuzzLevel.Tipsy)
+            {
+                return true;
+            }
+
+            return profile.Guardedness >= 5
+                && nightState.BuzzLevel == BuzzLevel.Sober
+                && nightState.PlayerHeat == PlayerHeat.Negative;
         }
 
         private static bool IsDrink(StardewValley.Object gift)

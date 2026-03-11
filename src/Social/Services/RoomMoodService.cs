@@ -29,6 +29,11 @@ namespace ValleyTalk.Social.Services
 
             foreach (var record in session.Memory)
             {
+                if (!record.VisibleToRoom)
+                {
+                    continue;
+                }
+
                 if (record.ResultBeat == InteractionBeat.Flirted)
                 {
                     flirtCount++;
@@ -65,7 +70,7 @@ namespace ValleyTalk.Social.Services
             {
                 vibe = RoomVibe.Tense;
             }
-            else if (rejectionCount > 0 || jealousCount > 0)
+            else if (rejectionCount >= 2 || jealousCount > 0)
             {
                 vibe = RoomVibe.Awkward;
             }

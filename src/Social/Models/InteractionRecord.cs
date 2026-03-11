@@ -4,7 +4,6 @@ namespace ValleyTalk.Social.Models
     {
         public int TimeOfDay { get; set; }
         public string NpcName { get; set; } = string.Empty;
-        public string RelatedNpcName { get; set; } = string.Empty;
         public string Action { get; set; } = string.Empty;
         public InteractionBeat ResultBeat { get; set; } = InteractionBeat.None;
         public string Summary { get; set; } = string.Empty;
