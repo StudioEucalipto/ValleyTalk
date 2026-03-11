@@ -195,6 +195,7 @@ namespace ValleyTalk
             var npcNightStateService = new NpcNightStateService(profileService);
             var placementPlanService = new SaloonPlacementService(helper, Monitor);
             var attendeeStagingService = new SaloonAttendeeStagingService(Monitor);
+            var commerceService = new CommerceService();
             var roomMoodService = new RoomMoodService();
             var sessionMemoryService = new SessionMemoryService();
             var actionClassifier = new ConversationActionClassifier();
@@ -209,6 +210,7 @@ namespace ValleyTalk
                 npcNightStateService,
                 placementPlanService,
                 attendeeStagingService,
+                commerceService,
                 roomMoodService,
                 contextBridge,
                 sessionMemoryService,

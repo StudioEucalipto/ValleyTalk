@@ -17,6 +17,7 @@ namespace ValleyTalk.Social
         private readonly INpcNightStateService npcNightStateService;
         private readonly IPlacementPlanService placementPlanService;
         private readonly IAttendeeStagingService attendeeStagingService;
+        private readonly ICommerceService commerceService;
         private readonly IRoomMoodService roomMoodService;
         private readonly IValleyTalkContextBridge contextBridge;
         private readonly ISessionMemoryService sessionMemoryService;
@@ -33,6 +34,7 @@ namespace ValleyTalk.Social
             INpcNightStateService npcNightStateService,
             IPlacementPlanService placementPlanService,
             IAttendeeStagingService attendeeStagingService,
+            ICommerceService commerceService,
             IRoomMoodService roomMoodService,
             IValleyTalkContextBridge contextBridge,
             ISessionMemoryService sessionMemoryService,
@@ -45,6 +47,7 @@ namespace ValleyTalk.Social
             this.npcNightStateService = npcNightStateService;
             this.placementPlanService = placementPlanService;
             this.attendeeStagingService = attendeeStagingService;
+            this.commerceService = commerceService;
             this.roomMoodService = roomMoodService;
             this.contextBridge = contextBridge;
             this.sessionMemoryService = sessionMemoryService;
@@ -125,18 +128,99 @@ namespace ValleyTalk.Social
             }
 
             var outcome = this.consequenceEngine.ApplyConversation(profile, nightState, dialogueText, isPlayerLine);
+            this.RecordOutcome(npc.Name, outcome);
+        }
 
-            this.sessionMemoryService.Record(this.currentSession, new InteractionRecord
+        public bool TryBuyDrinkForNpc(string npcName, string itemName, int price = 0)
+        {
+            if (!this.TryGetActiveParticipant(npcName, out var profile, out var nightState))
             {
-                TimeOfDay = Game1.timeOfDay,
-                NpcName = npc.Name,
-                Action = outcome.Action.ToString(),
-                ResultBeat = outcome.Beat,
-                Summary = outcome.Summary,
-                VisibleToRoom = outcome.VisibleToRoom
-            });
+                return false;
+            }
 
-            this.currentSession.RoomMood = this.roomMoodService.Recalculate(this.currentSession);
+            var outcome = this.commerceService.ApplyDrinkOrder(
+                new DrinkOrder
+                {
+                    BuyerName = Game1.player?.Name ?? "Farmer",
+                    RecipientName = npcName,
+                    ItemName = itemName,
+                    Price = price
+                },
+                profile,
+                nightState);
+
+            this.RecordOutcome(npcName, outcome);
+            return true;
+        }
+
+        public bool TryBuyMealForNpc(string npcName, string itemName, int price = 0)
+        {
+            if (!this.TryGetActiveParticipant(npcName, out var profile, out var nightState))
+            {
+                return false;
+            }
+
+            var outcome = this.commerceService.ApplyMealOrder(
+                new MealOrder
+                {
+                    BuyerName = Game1.player?.Name ?? "Farmer",
+                    RecipientName = npcName,
+                    ItemName = itemName,
+                    Price = price
+                },
+                profile,
+                nightState);
+
+            this.RecordOutcome(npcName, outcome);
+            return true;
+        }
+
+        public bool TryBuyDrinkForRoom(string itemName, int price = 0)
+        {
+            if (this.currentSession == null)
+            {
+                return false;
+            }
+
+            var applied = false;
+            foreach (var npcName in this.currentSession.Attendance.SelectedNpcNames)
+            {
+                if (!this.TryGetActiveParticipant(npcName, out var profile, out var nightState))
+                {
+                    continue;
+                }
+
+                this.commerceService.ApplyDrinkOrder(
+                    new DrinkOrder
+                    {
+                        BuyerName = Game1.player?.Name ?? "Farmer",
+                        RecipientName = npcName,
+                        ItemName = itemName,
+                        Price = price,
+                        ForRoom = true
+                    },
+                    profile,
+                    nightState);
+
+                applied = true;
+            }
+
+            if (!applied)
+            {
+                return false;
+            }
+
+            this.RecordOutcome(
+                "Room",
+                new InteractionOutcome
+                {
+                    Action = SocialActionType.BuyDrink,
+                    Beat = InteractionBeat.GiftedDrink,
+                    Summary = "The farmer bought a round for the room.",
+                    VisibleToRoom = true
+                });
+
+            return true;
         }
 
         public void NoteGift(NPC npc, StardewValley.Object gift, int taste)
@@ -147,18 +231,7 @@ namespace ValleyTalk.Social
             }
 
             var outcome = this.consequenceEngine.ApplyGift(profile, nightState, gift, taste);
-
-            this.sessionMemoryService.Record(this.currentSession, new InteractionRecord
-            {
-                TimeOfDay = Game1.timeOfDay,
-                NpcName = npc.Name,
-                Action = outcome.Action.ToString(),
-                ResultBeat = outcome.Beat,
-                Summary = outcome.Summary,
-                VisibleToRoom = outcome.VisibleToRoom
-            });
-
-            this.currentSession.RoomMood = this.roomMoodService.Recalculate(this.currentSession);
+            this.RecordOutcome(npc.Name, outcome);
         }
 
         private bool CanStartSession()
@@ -220,17 +293,37 @@ namespace ValleyTalk.Social
             this.currentSession = null;
         }
 
+        private void RecordOutcome(string npcName, InteractionOutcome outcome)
+        {
+            this.sessionMemoryService.Record(this.currentSession, new InteractionRecord
+            {
+                TimeOfDay = Game1.timeOfDay,
+                NpcName = npcName,
+                Action = outcome.Action.ToString(),
+                ResultBeat = outcome.Beat,
+                Summary = outcome.Summary,
+                VisibleToRoom = outcome.VisibleToRoom
+            });
+
+            this.currentSession.RoomMood = this.roomMoodService.Recalculate(this.currentSession);
+        }
+
         private bool TryGetActiveParticipant(NPC npc, out NpcProfile profile, out NpcNightState nightState)
+        {
+            return this.TryGetActiveParticipant(npc?.Name, out profile, out nightState);
+        }
+
+        private bool TryGetActiveParticipant(string npcName, out NpcProfile profile, out NpcNightState nightState)
         {
             profile = null;
             nightState = null;
-            if (this.currentSession == null || npc == null)
+            if (this.currentSession == null || string.IsNullOrWhiteSpace(npcName))
             {
                 return false;
             }
 
-            return this.profileService.TryGetProfile(npc.Name, out profile)
-                && this.currentSession.NightStates.TryGetValue(npc.Name, out nightState);
+            return this.profileService.TryGetProfile(npcName, out profile)
+                && this.currentSession.NightStates.TryGetValue(npcName, out nightState);
         }
     }
 }

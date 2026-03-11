@@ -23,6 +23,7 @@ namespace ValleyTalk.Social.Services
         {
             var flirtCount = 0;
             var argumentCount = 0;
+            var drinkCount = 0;
 
             foreach (var record in session.Memory)
             {
@@ -34,12 +35,25 @@ namespace ValleyTalk.Social.Services
                 {
                     argumentCount++;
                 }
+                else if (record.ResultBeat == InteractionBeat.GiftedDrink)
+                {
+                    drinkCount++;
+                }
             }
 
+            var drunkCount = session.NightStates.Values.Count(state => state.BuzzLevel == BuzzLevel.Drunk);
             var vibe = RoomVibe.Cozy;
-            if (argumentCount > 0)
+            if (argumentCount > 0 && drunkCount >= 2)
+            {
+                vibe = RoomVibe.Rowdy;
+            }
+            else if (argumentCount > 0)
             {
                 vibe = RoomVibe.Tense;
+            }
+            else if (drunkCount >= 2 || drinkCount >= 3)
+            {
+                vibe = RoomVibe.Rowdy;
             }
             else if (flirtCount >= 2)
             {
@@ -91,6 +105,8 @@ namespace ValleyTalk.Social.Services
         {
             switch (vibe)
             {
+                case RoomVibe.Rowdy:
+                    return "The saloon feels rowdy, with " + attendanceSize + " villagers getting louder and looser.";
                 case RoomVibe.Tense:
                     return "The saloon feels tense, with " + attendanceSize + " villagers watching each other carefully.";
                 case RoomVibe.Romantic:

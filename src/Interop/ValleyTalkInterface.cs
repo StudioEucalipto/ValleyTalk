@@ -38,4 +38,19 @@ public class ValleyTalkInterface : IValleyTalkInterface
     {
         ModInteropManager.Instance.ClearPromptOverrides(_modName, characterName);
     }
+
+    public bool TryBuyDrinkForNpc(string characterName, string itemName, int price = 0)
+    {
+        return ModEntry.SaturdaySocial?.TryBuyDrinkForNpc(characterName, itemName, price) ?? false;
+    }
+
+    public bool TryBuyMealForNpc(string characterName, string itemName, int price = 0)
+    {
+        return ModEntry.SaturdaySocial?.TryBuyMealForNpc(characterName, itemName, price) ?? false;
+    }
+
+    public bool TryBuyDrinkForRoom(string itemName, int price = 0)
+    {
+        return ModEntry.SaturdaySocial?.TryBuyDrinkForRoom(itemName, price) ?? false;
+    }
 }
