@@ -16,6 +16,16 @@ namespace ValleyTalk.Social.Services
         public InteractionOutcome ApplyConversation(NpcProfile profile, NpcNightState nightState, string dialogueText, bool isPlayerLine)
         {
             var action = this.classifier.Classify(dialogueText, isPlayerLine);
+            return this.ApplyAction(profile, nightState, action, isPlayerLine);
+        }
+
+        public InteractionOutcome ApplyExplicitAction(NpcProfile profile, NpcNightState nightState, SocialActionType action)
+        {
+            return this.ApplyAction(profile, nightState, action, true);
+        }
+
+        private InteractionOutcome ApplyAction(NpcProfile profile, NpcNightState nightState, SocialActionType action, bool isPlayerLine)
+        {
             var outcome = new InteractionOutcome
             {
                 Action = action

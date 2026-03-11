@@ -128,6 +128,13 @@ namespace ValleyTalk
                 getValue: () => ModEntry.Config.InitiateTypedDialogueKey,
                 setValue: (value) =>{ ModEntry.Config.InitiateTypedDialogueKey = value; }
             );
+            ConfigMenu.AddKeybind(
+                mod: ModManifest,
+                name: () => "Saturday social action key",
+                tooltip: () => "Key to press while clicking an attending villager to open the Saturday social action menu.",
+                getValue: () => ModEntry.Config.SaturdaySocialActionMenuKey,
+                setValue: (value) =>{ ModEntry.Config.SaturdaySocialActionMenuKey = value; }
+            );
             ConfigMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => Util.GetString("configTranslation", returnNull: true) ?? "Translate Outputs",

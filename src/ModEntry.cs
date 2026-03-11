@@ -200,6 +200,7 @@ namespace ValleyTalk
             var sessionMemoryService = new SessionMemoryService();
             var actionClassifier = new ConversationActionClassifier();
             var consequenceEngine = new ConsequenceEngine(actionClassifier);
+            var socialActionService = new SocialActionService(consequenceEngine, commerceService);
             var contextBridge = new ValleyTalkContextBridge(profileService, sessionMemoryService);
 
             SaturdaySocial = new SaturdaySocialManager(
@@ -210,7 +211,7 @@ namespace ValleyTalk
                 npcNightStateService,
                 placementPlanService,
                 attendeeStagingService,
-                commerceService,
+                socialActionService,
                 roomMoodService,
                 contextBridge,
                 sessionMemoryService,
