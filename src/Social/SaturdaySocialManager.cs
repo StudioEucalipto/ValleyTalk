@@ -10,8 +10,6 @@ namespace ValleyTalk.Social
 {
     public class SaturdaySocialManager
     {
-        private const int RelaxedLateEveningTime = 2200;
-
         private readonly IMonitor monitor;
         private readonly ModConfig config;
         private readonly IAttendanceService attendanceService;
@@ -108,7 +106,6 @@ namespace ValleyTalk.Social
                 return;
             }
 
-            this.MaintainLowPressureSessionState();
             this.attendeeStagingService.StageAttendees(this.currentSession);
         }
 
@@ -308,14 +305,12 @@ namespace ValleyTalk.Social
             {
                 SessionKey = this.GetSessionKey(),
                 StartedAtTime = Game1.timeOfDay,
-                ClockFrozen = false,
                 Attendance = attendance,
                 RoomMood = roomMood,
                 PlacementPlan = placementPlan,
                 NightStates = nightStates
             };
 
-            this.MaintainLowPressureSessionState();
             this.attendeeStagingService.StageAttendees(this.currentSession);
             this.lastStartedSessionKey = this.currentSession.SessionKey;
             this.monitor.Log(
@@ -330,51 +325,9 @@ namespace ValleyTalk.Social
                 return;
             }
 
-            this.RestorePlayerEnergy();
             this.attendeeStagingService.RestoreAttendees(this.currentSession);
             this.monitor.Log("Ended Saturday social session.", LogLevel.Trace);
             this.currentSession = null;
-        }
-
-        private void MaintainLowPressureSessionState()
-        {
-            if (this.currentSession == null || !this.IsSaloon(Game1.player?.currentLocation))
-            {
-                return;
-            }
-
-            this.RestorePlayerEnergy();
-
-            var relaxedTimeAnchor = this.GetRelaxedTimeAnchor();
-            if (Game1.timeOfDay > relaxedTimeAnchor)
-            {
-                Game1.timeOfDay = relaxedTimeAnchor;
-                this.currentSession.ClockFrozen = true;
-            }
-            else
-            {
-                this.currentSession.ClockFrozen = Game1.timeOfDay >= relaxedTimeAnchor;
-            }
-        }
-
-        private int GetRelaxedTimeAnchor()
-        {
-            if (this.currentSession == null)
-            {
-                return RelaxedLateEveningTime;
-            }
-
-            return Math.Max(this.currentSession.StartedAtTime, RelaxedLateEveningTime);
-        }
-
-        private void RestorePlayerEnergy()
-        {
-            if (Game1.player == null)
-            {
-                return;
-            }
-
-            Game1.player.Stamina = (float)Game1.player.MaxStamina;
         }
 
         private void RecordOutcome(string npcName, InteractionOutcome outcome, bool recalculateRoomMood = true)
