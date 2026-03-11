@@ -40,7 +40,6 @@ namespace ValleyTalk
         }
 
         public SButton InitiateTypedDialogueKey { get; internal set; } = SButton.LeftAlt;
-        public SButton SaturdaySocialActionMenuKey { get; internal set; } = SButton.LeftControl;
         internal List<string> DisabledCharactersList { get; private set; } = new List<string>();
         public bool SuppressConnectionCheck { get; set; } = false;
     }

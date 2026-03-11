@@ -17,7 +17,7 @@ namespace ValleyTalk.Social
         private readonly INpcNightStateService npcNightStateService;
         private readonly IPlacementPlanService placementPlanService;
         private readonly IAttendeeStagingService attendeeStagingService;
-        private readonly ISocialActionService socialActionService;
+        private readonly ICommerceService commerceService;
         private readonly IRoomMoodService roomMoodService;
         private readonly IValleyTalkContextBridge contextBridge;
         private readonly ISessionMemoryService sessionMemoryService;
@@ -34,7 +34,7 @@ namespace ValleyTalk.Social
             INpcNightStateService npcNightStateService,
             IPlacementPlanService placementPlanService,
             IAttendeeStagingService attendeeStagingService,
-            ISocialActionService socialActionService,
+            ICommerceService commerceService,
             IRoomMoodService roomMoodService,
             IValleyTalkContextBridge contextBridge,
             ISessionMemoryService sessionMemoryService,
@@ -47,7 +47,7 @@ namespace ValleyTalk.Social
             this.npcNightStateService = npcNightStateService;
             this.placementPlanService = placementPlanService;
             this.attendeeStagingService = attendeeStagingService;
-            this.socialActionService = socialActionService;
+            this.commerceService = commerceService;
             this.roomMoodService = roomMoodService;
             this.contextBridge = contextBridge;
             this.sessionMemoryService = sessionMemoryService;
@@ -120,89 +120,6 @@ namespace ValleyTalk.Social
             return !string.IsNullOrWhiteSpace(contextText);
         }
 
-        public bool CanInteractWithNpc(NPC npc)
-        {
-            return npc != null
-                && this.currentSession != null
-                && this.IsSaloon(Game1.player?.currentLocation)
-                && this.currentSession.Attendance.SelectedNpcNames.Contains(npc.Name);
-        }
-
-        public IReadOnlyList<SocialActionRequest> GetAvailableActionsForNpc(string npcName)
-        {
-            if (!this.TryGetActiveParticipant(npcName, out var profile, out var nightState))
-            {
-                return Array.Empty<SocialActionRequest>();
-            }
-
-            var actions = new List<SocialActionRequest>
-            {
-                new SocialActionRequest
-                {
-                    Action = SocialActionType.BuyDrink,
-                    TargetNpcName = npcName,
-                    Label = "Buy Drink",
-                    Description = "Order " + profile.Name + " a beer.",
-                    ItemName = "Beer",
-                    Price = 400
-                },
-                new SocialActionRequest
-                {
-                    Action = SocialActionType.BuyMeal,
-                    TargetNpcName = npcName,
-                    Label = "Buy Meal",
-                    Description = "Order " + profile.Name + " something to eat.",
-                    ItemName = "Salad",
-                    Price = 220
-                },
-                new SocialActionRequest
-                {
-                    Action = SocialActionType.InviteDance,
-                    TargetNpcName = npcName,
-                    Label = "Invite Dance",
-                    Description = "Try to pull " + profile.Name + " onto the floor."
-                },
-                new SocialActionRequest
-                {
-                    Action = SocialActionType.SuggestPrivateConversation,
-                    TargetNpcName = npcName,
-                    Label = "Private Talk",
-                    Description = "Suggest stepping somewhere quieter."
-                },
-                new SocialActionRequest
-                {
-                    Action = SocialActionType.Apologize,
-                    TargetNpcName = npcName,
-                    Label = "Apologize",
-                    Description = "Try to smooth the mood over."
-                }
-            };
-
-            if (nightState.Mood != MoodState.Irritated || profile.Temper >= 3)
-            {
-                actions.Add(new SocialActionRequest
-                {
-                    Action = SocialActionType.Provoke,
-                    TargetNpcName = npcName,
-                    Label = "Provoke",
-                    Description = "Push the conversation into risky territory."
-                });
-            }
-
-            actions.Add(new SocialActionRequest
-            {
-                Action = SocialActionType.BuyDrink,
-                TargetNpcName = npcName,
-                Label = "Buy Round",
-                Description = "Cover a round for everybody in the room.",
-                ItemName = "Beer",
-                Price = 1600,
-                TargetsRoom = true
-            });
-
-            return actions;
-        }
-
         public void NoteConversation(NPC npc, string dialogueText, bool isPlayerLine)
         {
             if (!this.TryGetActiveParticipant(npc, out var profile, out var nightState))
@@ -216,69 +133,93 @@ namespace ValleyTalk.Social
 
         public bool TryBuyDrinkForNpc(string npcName, string itemName, int price = 0)
         {
-            return this.TryExecuteAction(new SocialActionRequest
-            {
-                Action = SocialActionType.BuyDrink,
-                TargetNpcName = npcName,
-                ItemName = itemName,
-                Price = price
-            }, out _);
-        }
-
-        public bool TryBuyMealForNpc(string npcName, string itemName, int price = 0)
-        {
-            return this.TryExecuteAction(new SocialActionRequest
-            {
-                Action = SocialActionType.BuyMeal,
-                TargetNpcName = npcName,
-                ItemName = itemName,
-                Price = price
-            }, out _);
-        }
-
-        public bool TryBuyDrinkForRoom(string itemName, int price = 0)
-        {
-            return this.TryExecuteAction(new SocialActionRequest
-            {
-                Action = SocialActionType.BuyDrink,
-                TargetNpcName = "Room",
-                ItemName = itemName,
-                Price = price,
-                TargetsRoom = true
-            }, out _);
-        }
-
-        public bool TryExecuteAction(SocialActionRequest request, out string feedback)
-        {
-            feedback = string.Empty;
-            if (request == null || this.currentSession == null)
+            if (!this.TryGetActiveParticipant(npcName, out var profile, out var nightState))
             {
                 return false;
             }
 
-            if (request.TargetsRoom)
-            {
-                return this.TryExecuteRoomAction(request, out feedback);
-            }
-
-            if (!this.TryGetActiveParticipant(request.TargetNpcName, out var profile, out var nightState))
-            {
-                return false;
-            }
-
-            var outcome = this.socialActionService.Execute(
-                new SocialActionRequest
+            var outcome = this.commerceService.ApplyDrinkOrder(
+                new DrinkOrder
                 {
-                    Action = request.Action,
-                    TargetNpcName = request.TargetNpcName,
-                    ItemName = request.ItemName,
-                    Price = request.Price
+                    BuyerName = Game1.player?.Name ?? "Farmer",
+                    RecipientName = npcName,
+                    ItemName = itemName,
+                    Price = price
                 },
                 profile,
                 nightState);
 
-            this.RecordOutcome(request.TargetNpcName, outcome);
-            feedback = outcome.Summary;
+            this.RecordOutcome(npcName, outcome);
+            return true;
+        }
+
+        public bool TryBuyMealForNpc(string npcName, string itemName, int price = 0)
+        {
+            if (!this.TryGetActiveParticipant(npcName, out var profile, out var nightState))
+            {
+                return false;
+            }
+
+            var outcome = this.commerceService.ApplyMealOrder(
+                new MealOrder
+                {
+                    BuyerName = Game1.player?.Name ?? "Farmer",
+                    RecipientName = npcName,
+                    ItemName = itemName,
+                    Price = price
+                },
+                profile,
+                nightState);
+
+            this.RecordOutcome(npcName, outcome);
+            return true;
+        }
+
+        public bool TryBuyDrinkForRoom(string itemName, int price = 0)
+        {
+            if (this.currentSession == null)
+            {
+                return false;
+            }
+
+            var applied = false;
+            foreach (var npcName in this.currentSession.Attendance.SelectedNpcNames)
+            {
+                if (!this.TryGetActiveParticipant(npcName, out var profile, out var nightState))
+                {
+                    continue;
+                }
+
+                this.commerceService.ApplyDrinkOrder(
+                    new DrinkOrder
+                    {
+                        BuyerName = Game1.player?.Name ?? "Farmer",
+                        RecipientName = npcName,
+                        ItemName = itemName,
+                        Price = price,
+                        ForRoom = true
+                    },
+                    profile,
+                    nightState);
+
+                applied = true;
+            }
+
+            if (!applied)
+            {
+                return false;
+            }
+
+            this.RecordOutcome(
+                "Room",
+                new InteractionOutcome
+                {
+                    Action = SocialActionType.BuyDrink,
+                    Beat = InteractionBeat.GiftedDrink,
+                    Summary = "The farmer bought a round for the room.",
+                    VisibleToRoom = true
+                });
+
             return true;
         }
 
@@ -365,53 +306,6 @@ namespace ValleyTalk.Social
             });
 
             this.currentSession.RoomMood = this.roomMoodService.Recalculate(this.currentSession);
-        }
-
-        private bool TryExecuteRoomAction(SocialActionRequest request, out string feedback)
-        {
-            feedback = string.Empty;
-            var applied = false;
-
-            foreach (var npcName in this.currentSession.Attendance.SelectedNpcNames)
-            {
-                if (!this.TryGetActiveParticipant(npcName, out var profile, out var nightState))
-                {
-                    continue;
-                }
-
-                this.socialActionService.Execute(
-                    new SocialActionRequest
-                    {
-                        Action = request.Action,
-                        TargetNpcName = npcName,
-                        ItemName = request.ItemName,
-                        Price = request.Price,
-                        TargetsRoom = true
-                    },
-                    profile,
-                    nightState);
-
-                applied = true;
-            }
-
-            if (!applied)
-            {
-                return false;
-            }
-
-            var outcome = new InteractionOutcome
-            {
-                Action = request.Action,
-                Beat = request.Action == SocialActionType.BuyDrink ? InteractionBeat.GiftedDrink : InteractionBeat.SharedMeal,
-                Summary = request.Action == SocialActionType.BuyDrink
-                    ? "The farmer bought a round for the room."
-                    : "The farmer covered food for the room.",
-                VisibleToRoom = true
-            };
-
-            this.RecordOutcome("Room", outcome);
-            feedback = outcome.Summary;
-            return true;
         }
 
         private bool TryGetActiveParticipant(NPC npc, out NpcProfile profile, out NpcNightState nightState)

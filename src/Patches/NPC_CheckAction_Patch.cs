@@ -12,51 +12,26 @@ namespace ValleyTalk
     {
 
         /// <summary>
+        /// Key to press while clicking on an NPC to initiate typed dialogue
+        /// </summary>
+        public static SButton InitiateTypedDialogueKey = ModEntry.Config.InitiateTypedDialogueKey;
+
+        /// <summary>
         /// Prefix method for NPC.checkAction
         /// </summary>
         public static bool Prefix(ref NPC __instance, ref bool __result, Farmer who, GameLocation l)
         {
-            var typedDialogueKeyDown = ModEntry.SHelper.Input.IsDown(ModEntry.Config.InitiateTypedDialogueKey);
-            var socialActionKeyDown = ModEntry.SHelper.Input.IsDown(ModEntry.Config.SaturdaySocialActionMenuKey);
+            // Check if the Alt key is being held down (or whatever key is configured)
+            bool wasTriggerKeyDown = ModEntry.SHelper.Input.IsDown(InitiateTypedDialogueKey);
 
             // Check for cases when we should not allow initiating typed dialogue
             if (
                 __instance.IsInvisible ||
                 __instance.isSleeping.Value ||
                 !who.CanMove ||
+                !wasTriggerKeyDown ||
                 !DialogueBuilder.Instance.PatchNpc(__instance)
                 )
-            {
-                return true;
-            }
-
-            if (socialActionKeyDown && ModEntry.SaturdaySocial?.CanInteractWithNpc(__instance) == true)
-            {
-                var actions = ModEntry.SaturdaySocial.GetAvailableActionsForNpc(__instance.Name);
-                if (actions.Count > 0)
-                {
-                    Game1.activeClickableMenu = new SaturdaySocialActionMenu(
-                        __instance.displayName,
-                        actions,
-                        action =>
-                        {
-                            if (ModEntry.SaturdaySocial.TryExecuteAction(action, out var feedback))
-                            {
-                                Game1.playSound("coin");
-                                Game1.showGlobalMessage(feedback);
-                            }
-                            else
-                            {
-                                Game1.playSound("cancel");
-                                Game1.showGlobalMessage("That social move did not land.");
-                            }
-                        });
-                    __result = false;
-                    return false;
-                }
-            }
-
-            if (!typedDialogueKeyDown)
             {
                 return true;
             }

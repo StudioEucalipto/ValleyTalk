@@ -18,6 +18,5 @@
   "SaturdaySocialMaxAttendance": 8,
   "DisableCharacters": "",
   "InitiateTypedDialogueKey": "LeftAlt",
-  "SaturdaySocialActionMenuKey": "LeftControl",
   "SupressConnectionCheck": false
 }
