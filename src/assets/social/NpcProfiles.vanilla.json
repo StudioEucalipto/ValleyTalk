@@ -92,6 +92,7 @@
     "Temper": 2,
     "AlcoholTolerance": 3,
     "Guardedness": 2,
+    "CommittedPartnerName": "Marnie",
     "PreferredSaloonActivity": "Chatting",
     "RoleplayNotes": "Politically smooth and secretly vain; very aware of reputation and gossip."
   },
@@ -104,6 +105,7 @@
     "Temper": 2,
     "AlcoholTolerance": 3,
     "Guardedness": 2,
+    "CommittedPartnerName": "Lewis",
     "PreferredSaloonActivity": "Drinking",
     "RoleplayNotes": "Affectionate and sociable, with a soft spot for warmth and companionship."
   },

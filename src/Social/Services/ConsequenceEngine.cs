@@ -13,7 +13,7 @@ namespace ValleyTalk.Social.Services
             this.classifier = classifier;
         }
 
-        public InteractionOutcome ApplyConversation(NpcProfile profile, NpcNightState nightState, string dialogueText, bool isPlayerLine)
+        public InteractionOutcome ApplyConversation(NpcProfile profile, NpcNightState nightState, SocialRelationshipContext relationshipContext, string dialogueText, bool isPlayerLine)
         {
             var action = this.classifier.Classify(dialogueText, isPlayerLine);
             var outcome = new InteractionOutcome
@@ -24,16 +24,43 @@ namespace ValleyTalk.Social.Services
             switch (action)
             {
                 case SocialActionType.Flirt:
+                    if (ShouldRejectFlirt(profile, nightState, relationshipContext))
+                    {
+                        outcome.Beat = InteractionBeat.Rejected;
+                        outcome.Summary = relationshipContext.CommittedPartnerPresent
+                            ? "The farmer flirted with " + profile.Name + ", but " + profile.Name + " pulled back and glanced toward " + relationshipContext.CommittedPartnerName + "."
+                            : profile.Name + " shut the flirtation down and kept some distance.";
+                        outcome.VisibleToRoom = relationshipContext.CommittedPartnerPresent;
+                        nightState.Mood = MoodState.Guarded;
+                        nightState.Openness = OpennessLevel.Closed;
+                        nightState.PlayerHeat = LowerHeat(nightState.PlayerHeat);
+                        break;
+                    }
+
                     outcome.Beat = InteractionBeat.Flirted;
                     outcome.Summary = isPlayerLine
-                        ? "The farmer flirted with " + profile.Name + "."
+                        ? relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 3
+                            ? "The farmer flirted with " + profile.Name + ", and " + profile.Name + " answered carefully under the room's eyes."
+                            : "The farmer flirted with " + profile.Name + "."
                         : profile.Name + " answered with a flirtatious tone.";
                     nightState.PlayerHeat = RaiseHeat(nightState.PlayerHeat);
-                    nightState.Openness = OpennessLevel.Bold;
+                    nightState.Openness = relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 3
+                        ? OpennessLevel.Open
+                        : OpennessLevel.Bold;
                     nightState.Mood = nightState.Mood == MoodState.Irritated ? MoodState.Guarded : MoodState.Cheerful;
                     break;
 
                 case SocialActionType.InviteDance:
+                    if (ShouldRejectInvitation(profile, nightState, relationshipContext))
+                    {
+                        outcome.Beat = InteractionBeat.Rejected;
+                        outcome.Summary = profile.Name + " refused to make a scene on the dance floor.";
+                        outcome.VisibleToRoom = true;
+                        nightState.Mood = MoodState.Guarded;
+                        nightState.CurrentActivity = SocialActivity.Brooding;
+                        break;
+                    }
+
                     outcome.Beat = InteractionBeat.Danced;
                     outcome.Summary = isPlayerLine
                         ? "The farmer steered the conversation toward dancing."
@@ -67,6 +94,16 @@ namespace ValleyTalk.Social.Services
                     break;
 
                 case SocialActionType.SuggestPrivateConversation:
+                    if (relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 4 && nightState.BuzzLevel != BuzzLevel.Drunk)
+                    {
+                        outcome.Beat = InteractionBeat.Rejected;
+                        outcome.Summary = profile.Name + " refused the private invitation with the room watching.";
+                        outcome.VisibleToRoom = true;
+                        nightState.Mood = MoodState.Guarded;
+                        nightState.Openness = OpennessLevel.Closed;
+                        break;
+                    }
+
                     outcome.Beat = InteractionBeat.PrivateInvite;
                     outcome.Summary = isPlayerLine
                         ? "The farmer tested whether " + profile.Name + " wanted privacy."
@@ -95,7 +132,8 @@ namespace ValleyTalk.Social.Services
             }
 
             nightState.LastInteractionBeat = outcome.Beat;
-            if (nightState.CurrentActivity != SocialActivity.Dancing)
+            if (nightState.CurrentActivity != SocialActivity.Dancing
+                && nightState.CurrentActivity != SocialActivity.Brooding)
             {
                 nightState.CurrentActivity = action == SocialActionType.SuggestPrivateConversation
                     ? SocialActivity.Lingering
@@ -105,14 +143,16 @@ namespace ValleyTalk.Social.Services
             return outcome;
         }
 
-        public InteractionOutcome ApplyGift(NpcProfile profile, NpcNightState nightState, StardewValley.Object gift, int taste)
+        public InteractionOutcome ApplyGift(NpcProfile profile, NpcNightState nightState, SocialRelationshipContext relationshipContext, StardewValley.Object gift, int taste)
         {
             var isDrink = IsDrink(gift);
             var outcome = new InteractionOutcome
             {
                 Action = isDrink ? SocialActionType.BuyDrink : SocialActionType.BuyMeal,
                 Beat = isDrink ? InteractionBeat.GiftedDrink : InteractionBeat.SharedMeal,
-                Summary = "The farmer bought " + gift.DisplayName + " for " + profile.Name + "."
+                Summary = relationshipContext.CommittedPartnerPresent && isDrink && profile.LoyaltyToCommitments >= 4
+                    ? "The farmer bought " + gift.DisplayName + " for " + profile.Name + ", and " + profile.Name + " accepted with a wary glance around the room."
+                    : "The farmer bought " + gift.DisplayName + " for " + profile.Name + "."
             };
 
             nightState.LastInteractionBeat = outcome.Beat;
@@ -139,6 +179,29 @@ namespace ValleyTalk.Social.Services
             }
 
             return outcome;
+        }
+
+        private static bool ShouldRejectFlirt(NpcProfile profile, NpcNightState nightState, SocialRelationshipContext relationshipContext)
+        {
+            if (relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 4 && nightState.BuzzLevel <= BuzzLevel.Buzzed)
+            {
+                return true;
+            }
+
+            return profile.Guardedness >= 4
+                && nightState.BuzzLevel == BuzzLevel.Sober
+                && nightState.PlayerHeat <= PlayerHeat.Neutral;
+        }
+
+        private static bool ShouldRejectInvitation(NpcProfile profile, NpcNightState nightState, SocialRelationshipContext relationshipContext)
+        {
+            if (relationshipContext.CommittedPartnerPresent && profile.LoyaltyToCommitments >= 4 && nightState.BuzzLevel != BuzzLevel.Drunk)
+            {
+                return true;
+            }
+
+            return nightState.PlayerHeat == PlayerHeat.Negative
+                || (profile.Guardedness >= 4 && nightState.PlayerHeat <= PlayerHeat.Neutral);
         }
 
         private static bool IsDrink(StardewValley.Object gift)

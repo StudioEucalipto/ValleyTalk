@@ -12,6 +12,7 @@ namespace ValleyTalk.Social.Models
         public int Temper { get; set; } = 2;
         public int AlcoholTolerance { get; set; } = 2;
         public int Guardedness { get; set; } = 3;
+        public string CommittedPartnerName { get; set; } = string.Empty;
         public string PreferredSaloonActivity { get; set; } = "Chatting";
         public string RoleplayNotes { get; set; } = string.Empty;
     }

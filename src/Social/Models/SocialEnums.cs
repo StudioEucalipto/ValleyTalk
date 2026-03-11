@@ -63,6 +63,7 @@ namespace ValleyTalk.Social.Models
         Flirted,
         Argued,
         Rejected,
+        Jealous,
         PrivateInvite
     }
 

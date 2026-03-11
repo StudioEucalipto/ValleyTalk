@@ -85,6 +85,11 @@ namespace ValleyTalk.Social.Services
                 return PlayerHeat.Neutral;
             }
 
+            if (friendship.IsMarried() || friendship.IsRoommate() || friendship.IsEngaged() || friendship.IsDating())
+            {
+                return PlayerHeat.Attracted;
+            }
+
             var hearts = friendship.Points / 250;
             if (hearts >= 8 && profile.Flirtiness >= 3)
             {

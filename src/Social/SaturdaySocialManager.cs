@@ -18,10 +18,12 @@ namespace ValleyTalk.Social
         private readonly IPlacementPlanService placementPlanService;
         private readonly IAttendeeStagingService attendeeStagingService;
         private readonly ICommerceService commerceService;
+        private readonly ISocialRelationshipService relationshipService;
         private readonly IRoomMoodService roomMoodService;
         private readonly IValleyTalkContextBridge contextBridge;
         private readonly ISessionMemoryService sessionMemoryService;
         private readonly IConsequenceEngine consequenceEngine;
+        private readonly IConversationCommerceParser conversationCommerceParser;
 
         private SocialSession currentSession;
         private string lastStartedSessionKey;
@@ -35,10 +37,12 @@ namespace ValleyTalk.Social
             IPlacementPlanService placementPlanService,
             IAttendeeStagingService attendeeStagingService,
             ICommerceService commerceService,
+            ISocialRelationshipService relationshipService,
             IRoomMoodService roomMoodService,
             IValleyTalkContextBridge contextBridge,
             ISessionMemoryService sessionMemoryService,
-            IConsequenceEngine consequenceEngine)
+            IConsequenceEngine consequenceEngine,
+            IConversationCommerceParser conversationCommerceParser)
         {
             this.monitor = monitor;
             this.config = config;
@@ -48,10 +52,12 @@ namespace ValleyTalk.Social
             this.placementPlanService = placementPlanService;
             this.attendeeStagingService = attendeeStagingService;
             this.commerceService = commerceService;
+            this.relationshipService = relationshipService;
             this.roomMoodService = roomMoodService;
             this.contextBridge = contextBridge;
             this.sessionMemoryService = sessionMemoryService;
             this.consequenceEngine = consequenceEngine;
+            this.conversationCommerceParser = conversationCommerceParser;
         }
 
         public bool HasActiveSession => this.currentSession != null;
@@ -127,8 +133,36 @@ namespace ValleyTalk.Social
                 return;
             }
 
-            var outcome = this.consequenceEngine.ApplyConversation(profile, nightState, dialogueText, isPlayerLine);
-            this.RecordOutcome(npc.Name, outcome);
+            if (isPlayerLine && this.conversationCommerceParser.TryParse(dialogueText, out var orderIntent))
+            {
+                if (orderIntent.ForRoom && orderIntent.IsDrink)
+                {
+                    if (this.TryBuyDrinkForRoom(orderIntent.ItemName))
+                    {
+                        return;
+                    }
+                }
+
+                if (orderIntent.IsDrink)
+                {
+                    if (this.TryBuyDrinkForNpc(npc.Name, orderIntent.ItemName))
+                    {
+                        return;
+                    }
+                }
+
+                if (orderIntent.IsMeal)
+                {
+                    if (this.TryBuyMealForNpc(npc.Name, orderIntent.ItemName))
+                    {
+                        return;
+                    }
+                }
+            }
+
+            var relationshipContext = this.relationshipService.BuildContext(this.currentSession, profile, npc.Name);
+            var outcome = this.consequenceEngine.ApplyConversation(profile, nightState, relationshipContext, dialogueText, isPlayerLine);
+            this.RecordPrimaryAndObservedOutcomes(profile, relationshipContext, outcome);
         }
 
         public bool TryBuyDrinkForNpc(string npcName, string itemName, int price = 0)
@@ -138,6 +172,7 @@ namespace ValleyTalk.Social
                 return false;
             }
 
+            var relationshipContext = this.relationshipService.BuildContext(this.currentSession, profile, npcName);
             var outcome = this.commerceService.ApplyDrinkOrder(
                 new DrinkOrder
                 {
@@ -149,7 +184,7 @@ namespace ValleyTalk.Social
                 profile,
                 nightState);
 
-            this.RecordOutcome(npcName, outcome);
+            this.RecordPrimaryAndObservedOutcomes(profile, relationshipContext, outcome);
             return true;
         }
 
@@ -160,6 +195,7 @@ namespace ValleyTalk.Social
                 return false;
             }
 
+            var relationshipContext = this.relationshipService.BuildContext(this.currentSession, profile, npcName);
             var outcome = this.commerceService.ApplyMealOrder(
                 new MealOrder
                 {
@@ -171,7 +207,7 @@ namespace ValleyTalk.Social
                 profile,
                 nightState);
 
-            this.RecordOutcome(npcName, outcome);
+            this.RecordPrimaryAndObservedOutcomes(profile, relationshipContext, outcome);
             return true;
         }
 
@@ -230,8 +266,9 @@ namespace ValleyTalk.Social
                 return;
             }
 
-            var outcome = this.consequenceEngine.ApplyGift(profile, nightState, gift, taste);
-            this.RecordOutcome(npc.Name, outcome);
+            var relationshipContext = this.relationshipService.BuildContext(this.currentSession, profile, npc.Name);
+            var outcome = this.consequenceEngine.ApplyGift(profile, nightState, relationshipContext, gift, taste);
+            this.RecordPrimaryAndObservedOutcomes(profile, relationshipContext, outcome);
         }
 
         private bool CanStartSession()
@@ -293,7 +330,7 @@ namespace ValleyTalk.Social
             this.currentSession = null;
         }
 
-        private void RecordOutcome(string npcName, InteractionOutcome outcome)
+        private void RecordOutcome(string npcName, InteractionOutcome outcome, bool recalculateRoomMood = true)
         {
             this.sessionMemoryService.Record(this.currentSession, new InteractionRecord
             {
@@ -304,6 +341,21 @@ namespace ValleyTalk.Social
                 Summary = outcome.Summary,
                 VisibleToRoom = outcome.VisibleToRoom
             });
+
+            if (recalculateRoomMood)
+            {
+                this.currentSession.RoomMood = this.roomMoodService.Recalculate(this.currentSession);
+            }
+        }
+
+        private void RecordPrimaryAndObservedOutcomes(NpcProfile profile, SocialRelationshipContext relationshipContext, InteractionOutcome outcome)
+        {
+            this.RecordOutcome(profile.Name, outcome, recalculateRoomMood: false);
+
+            foreach (var observedReaction in this.relationshipService.ApplyObservedReactions(this.currentSession, profile, relationshipContext, outcome))
+            {
+                this.sessionMemoryService.Record(this.currentSession, observedReaction);
+            }
 
             this.currentSession.RoomMood = this.roomMoodService.Recalculate(this.currentSession);
         }

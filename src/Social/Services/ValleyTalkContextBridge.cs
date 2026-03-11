@@ -7,11 +7,13 @@ namespace ValleyTalk.Social.Services
     public class ValleyTalkContextBridge : IValleyTalkContextBridge
     {
         private readonly INpcProfileService profileService;
+        private readonly ISocialRelationshipService relationshipService;
         private readonly ISessionMemoryService sessionMemoryService;
 
-        public ValleyTalkContextBridge(INpcProfileService profileService, ISessionMemoryService sessionMemoryService)
+        public ValleyTalkContextBridge(INpcProfileService profileService, ISocialRelationshipService relationshipService, ISessionMemoryService sessionMemoryService)
         {
             this.profileService = profileService;
+            this.relationshipService = relationshipService;
             this.sessionMemoryService = sessionMemoryService;
         }
 
@@ -44,6 +46,7 @@ namespace ValleyTalk.Social.Services
                     .Where(candidate => candidate.GroupId == placement.GroupId && candidate.NpcName != npcName)
                     .Select(candidate => candidate.NpcName)
                     .ToList();
+            var relationshipContext = this.relationshipService.BuildContext(session, profile, npcName);
 
             return new ValleyTalkPromptContext
             {
@@ -62,10 +65,32 @@ namespace ValleyTalk.Social.Services
                         ? " with " + string.Join(", ", sameGroup) + "."
                         : " on their own."),
                 RoomSummary = session.RoomMood.Summary + " Visible groupings: " + string.Join(", ", session.RoomMood.VisibleGroups) + ".",
-                RelationshipSummary =
-                    "Existing commitments matter and should influence loyalty, secrecy, jealousy, guilt, and social risk.",
+                RelationshipSummary = this.BuildRelationshipSummary(relationshipContext),
                 RecentVisibleBeats = this.sessionMemoryService.GetRecentVisible(session, npcName, 4).Select(record => record.Summary).ToList()
             };
+        }
+
+        private string BuildRelationshipSummary(SocialRelationshipContext relationshipContext)
+        {
+            var pieces = new List<string>
+            {
+                "Farmer relationship status: " + relationshipContext.PlayerRelationshipStatus + "."
+            };
+
+            if (!string.IsNullOrWhiteSpace(relationshipContext.CommittedPartnerName))
+            {
+                pieces.Add(relationshipContext.CommittedPartnerPresent
+                    ? "Committed to " + relationshipContext.CommittedPartnerName + ", who is in the room."
+                    : "Committed to " + relationshipContext.CommittedPartnerName + ", so secrecy and guilt still matter.");
+            }
+
+            if (relationshipContext.JealousyRiskNpcNames.Count > 0)
+            {
+                pieces.Add("Possible observers who may react: " + string.Join(", ", relationshipContext.JealousyRiskNpcNames) + ".");
+            }
+
+            pieces.Add("Social risk tonight is " + relationshipContext.SocialRiskLevel + ".");
+            return string.Join(" ", pieces);
         }
     }
 }

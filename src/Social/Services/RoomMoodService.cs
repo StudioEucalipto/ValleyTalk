@@ -24,6 +24,8 @@ namespace ValleyTalk.Social.Services
             var flirtCount = 0;
             var argumentCount = 0;
             var drinkCount = 0;
+            var jealousCount = 0;
+            var rejectionCount = 0;
 
             foreach (var record in session.Memory)
             {
@@ -39,6 +41,14 @@ namespace ValleyTalk.Social.Services
                 {
                     drinkCount++;
                 }
+                else if (record.ResultBeat == InteractionBeat.Jealous)
+                {
+                    jealousCount++;
+                }
+                else if (record.ResultBeat == InteractionBeat.Rejected)
+                {
+                    rejectionCount++;
+                }
             }
 
             var drunkCount = session.NightStates.Values.Count(state => state.BuzzLevel == BuzzLevel.Drunk);
@@ -50,6 +60,14 @@ namespace ValleyTalk.Social.Services
             else if (argumentCount > 0)
             {
                 vibe = RoomVibe.Tense;
+            }
+            else if (jealousCount >= 2)
+            {
+                vibe = RoomVibe.Tense;
+            }
+            else if (rejectionCount > 0 || jealousCount > 0)
+            {
+                vibe = RoomVibe.Awkward;
             }
             else if (drunkCount >= 2 || drinkCount >= 3)
             {
@@ -109,6 +127,8 @@ namespace ValleyTalk.Social.Services
                     return "The saloon feels rowdy, with " + attendanceSize + " villagers getting louder and looser.";
                 case RoomVibe.Tense:
                     return "The saloon feels tense, with " + attendanceSize + " villagers watching each other carefully.";
+                case RoomVibe.Awkward:
+                    return "The saloon feels awkward, with " + attendanceSize + " villagers reading the room between exchanges.";
                 case RoomVibe.Romantic:
                     return "The saloon feels soft and charged, with " + attendanceSize + " villagers lingering close.";
                 case RoomVibe.Lively:

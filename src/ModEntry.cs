@@ -196,11 +196,13 @@ namespace ValleyTalk
             var placementPlanService = new SaloonPlacementService(helper, Monitor);
             var attendeeStagingService = new SaloonAttendeeStagingService(Monitor);
             var commerceService = new CommerceService();
+            var relationshipService = new SocialRelationshipService(profileService);
             var roomMoodService = new RoomMoodService();
             var sessionMemoryService = new SessionMemoryService();
             var actionClassifier = new ConversationActionClassifier();
             var consequenceEngine = new ConsequenceEngine(actionClassifier);
-            var contextBridge = new ValleyTalkContextBridge(profileService, sessionMemoryService);
+            var conversationCommerceParser = new ConversationCommerceParser();
+            var contextBridge = new ValleyTalkContextBridge(profileService, relationshipService, sessionMemoryService);
 
             SaturdaySocial = new SaturdaySocialManager(
                 Monitor,
@@ -211,10 +213,12 @@ namespace ValleyTalk
                 placementPlanService,
                 attendeeStagingService,
                 commerceService,
+                relationshipService,
                 roomMoodService,
                 contextBridge,
                 sessionMemoryService,
-                consequenceEngine);
+                consequenceEngine,
+                conversationCommerceParser);
 
             helper.Events.GameLoop.DayStarted += (sender, args) => SaturdaySocial.ResetForNewDay();
             helper.Events.GameLoop.TimeChanged += (sender, args) => SaturdaySocial.HandleTimeChanged();
