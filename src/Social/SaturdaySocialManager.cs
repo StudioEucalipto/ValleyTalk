@@ -16,6 +16,7 @@ namespace ValleyTalk.Social
         private readonly INpcProfileService profileService;
         private readonly INpcNightStateService npcNightStateService;
         private readonly IPlacementPlanService placementPlanService;
+        private readonly IAttendeeStagingService attendeeStagingService;
         private readonly IRoomMoodService roomMoodService;
         private readonly IValleyTalkContextBridge contextBridge;
         private readonly ISessionMemoryService sessionMemoryService;
@@ -31,6 +32,7 @@ namespace ValleyTalk.Social
             INpcProfileService profileService,
             INpcNightStateService npcNightStateService,
             IPlacementPlanService placementPlanService,
+            IAttendeeStagingService attendeeStagingService,
             IRoomMoodService roomMoodService,
             IValleyTalkContextBridge contextBridge,
             ISessionMemoryService sessionMemoryService,
@@ -42,6 +44,7 @@ namespace ValleyTalk.Social
             this.profileService = profileService;
             this.npcNightStateService = npcNightStateService;
             this.placementPlanService = placementPlanService;
+            this.attendeeStagingService = attendeeStagingService;
             this.roomMoodService = roomMoodService;
             this.contextBridge = contextBridge;
             this.sessionMemoryService = sessionMemoryService;
@@ -77,14 +80,24 @@ namespace ValleyTalk.Social
 
         public void ResetForNewDay()
         {
-            this.currentSession = null;
+            this.EndSession();
             this.lastStartedSessionKey = null;
         }
 
         public void ResetForTitle()
         {
-            this.currentSession = null;
+            this.EndSession();
             this.lastStartedSessionKey = null;
+        }
+
+        public void HandleTimeChanged()
+        {
+            if (this.currentSession == null || !this.IsSaloon(Game1.player?.currentLocation))
+            {
+                return;
+            }
+
+            this.attendeeStagingService.StageAttendees(this.currentSession);
         }
 
         public bool TryGetPromptContext(NPC npc, out string contextText)
@@ -188,6 +201,7 @@ namespace ValleyTalk.Social
                 NightStates = nightStates
             };
 
+            this.attendeeStagingService.StageAttendees(this.currentSession);
             this.lastStartedSessionKey = this.currentSession.SessionKey;
             this.monitor.Log(
                 "Started Saturday social session with attendees: " + string.Join(", ", attendance.SelectedNpcNames),
@@ -196,6 +210,12 @@ namespace ValleyTalk.Social
 
         private void EndSession()
         {
+            if (this.currentSession == null)
+            {
+                return;
+            }
+
+            this.attendeeStagingService.RestoreAttendees(this.currentSession);
             this.monitor.Log("Ended Saturday social session.", LogLevel.Trace);
             this.currentSession = null;
         }
