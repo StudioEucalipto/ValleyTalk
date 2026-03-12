@@ -222,12 +222,13 @@ namespace ValleyTalk
 
             helper.Events.GameLoop.DayStarted += (sender, args) => SaturdaySocial.ResetForNewDay();
             helper.Events.GameLoop.TimeChanged += (sender, args) => SaturdaySocial.HandleTimeChanged();
+            helper.Events.GameLoop.UpdateTicked += (sender, args) => SaturdaySocial.HandleUpdateTicked(args.Ticks);
             helper.Events.GameLoop.ReturnedToTitle += (sender, args) => SaturdaySocial.ResetForTitle();
             helper.Events.Player.Warped += (sender, args) =>
             {
                 if (args.IsLocalPlayer)
                 {
-                    SaturdaySocial.HandleWarp(args.NewLocation);
+                    SaturdaySocial.HandleWarp(args.OldLocation, args.NewLocation);
                 }
             };
         }

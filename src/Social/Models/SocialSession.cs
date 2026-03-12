@@ -8,6 +8,10 @@ namespace ValleyTalk.Social.Models
         public string LocationName { get; set; } = "Saloon";
         public int StartedAtTime { get; set; }
         public bool ClockFrozen { get; set; }
+        public SocialSessionPhase Phase { get; set; } = SocialSessionPhase.Saloon;
+        public PostSocialScenePlan PendingScene { get; set; } = new PostSocialScenePlan();
+        public string FollowUpNpcName { get; set; } = string.Empty;
+        public ulong LastFollowUpActivityTick { get; set; }
         public AttendanceRoll Attendance { get; set; } = new AttendanceRoll();
         public RoomMoodState RoomMood { get; set; } = new RoomMoodState();
         public PlacementPlan PlacementPlan { get; set; } = new PlacementPlan();

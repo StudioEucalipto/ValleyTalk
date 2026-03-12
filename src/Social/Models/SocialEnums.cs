@@ -78,4 +78,27 @@ namespace ValleyTalk.Social.Models
         BuyDrink,
         BuyMeal
     }
+
+    public enum SocialSessionPhase
+    {
+        Saloon,
+        FollowUpScene,
+        ResolvingNight
+    }
+
+    public enum PostSocialSceneType
+    {
+        None,
+        OutsideFight,
+        PlayerBedroomRomance,
+        NpcBedroomRomance
+    }
+
+    public enum FightOutcome
+    {
+        None,
+        PlayerWins,
+        NpcWins,
+        BrokenUp
+    }
 }

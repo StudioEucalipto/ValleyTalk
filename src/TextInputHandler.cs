@@ -16,6 +16,7 @@ namespace ValleyTalk
         private static NPC _currentNpc = null;
         private static string _currentDialogueKey = "";
         private static List<ConversationElement> _currentResponse = new List<ConversationElement>();
+        public static bool AwaitingTextInput => _awaitingTextInput;
 
         /// <summary>
         /// Initialize the text input manager with mod events
