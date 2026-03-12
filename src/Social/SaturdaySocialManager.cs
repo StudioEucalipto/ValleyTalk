@@ -13,6 +13,19 @@ namespace ValleyTalk.Social
     public class SaturdaySocialManager
     {
         private const int RelaxedLateEveningTime = 2200;
+        private static readonly Point[] CompanionTileOffsets =
+        {
+            new Point(1, 0),
+            new Point(-1, 0),
+            new Point(0, 1),
+            new Point(0, -1),
+            new Point(2, 0),
+            new Point(-2, 0),
+            new Point(1, 1),
+            new Point(-1, 1),
+            new Point(1, -1),
+            new Point(-1, -1)
+        };
         private static readonly HashSet<string> NpcBedroomEligibleSingles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Abigail",
@@ -479,8 +492,10 @@ namespace ValleyTalk.Social
                 var playerTile = Game1.player?.TilePoint ?? new Point(32, 62);
                 scene.PlayerTileX = playerTile.X;
                 scene.PlayerTileY = playerTile.Y;
-                scene.NpcTileX = playerTile.X + 1;
-                scene.NpcTileY = playerTile.Y;
+                var fightLocation = newLocation ?? Game1.getLocationFromName(scene.LocationName);
+                var npcTile = this.GetCompanionSceneTile(fightLocation, playerTile);
+                scene.NpcTileX = npcTile.X;
+                scene.NpcTileY = npcTile.Y;
                 this.PlaceNpcForScene(scene);
             }
         }
@@ -668,15 +683,22 @@ namespace ValleyTalk.Social
                 return true;
             }
 
+            var homeLocation = Game1.getLocationFromName(home.Location);
+            if (!this.TryResolveScenePair(homeLocation, bedTile, out var playerTile, out var npcTile))
+            {
+                scene = this.CreatePlayerBedroomPlan(profile.Name, "The night continued back at the farmhouse.");
+                return true;
+            }
+
             scene = new PostSocialScenePlan
             {
                 SceneType = PostSocialSceneType.NpcBedroomRomance,
                 TargetNpcName = profile.Name,
                 LocationName = home.Location,
-                PlayerTileX = bedTile.X,
-                PlayerTileY = bedTile.Y,
-                NpcTileX = bedTile.X + 1,
-                NpcTileY = bedTile.Y,
+                PlayerTileX = playerTile.X,
+                PlayerTileY = playerTile.Y,
+                NpcTileX = npcTile.X,
+                NpcTileY = npcTile.Y,
                 IntroSummary = "The night continued back at " + profile.Name + "'s home."
             };
             return true;
@@ -685,15 +707,24 @@ namespace ValleyTalk.Social
         private PostSocialScenePlan CreatePlayerBedroomPlan(string npcName, string introSummary)
         {
             var bedTile = this.GetPlayerBedTile();
+            var farmhouse = Game1.getLocationFromName("FarmHouse");
+            var playerTile = bedTile;
+            var npcTile = this.GetCompanionSceneTile(farmhouse, bedTile);
+            if (this.TryResolveScenePair(farmhouse, bedTile, out var resolvedPlayerTile, out var resolvedNpcTile))
+            {
+                playerTile = resolvedPlayerTile;
+                npcTile = resolvedNpcTile;
+            }
+
             return new PostSocialScenePlan
             {
                 SceneType = PostSocialSceneType.PlayerBedroomRomance,
                 TargetNpcName = npcName,
                 LocationName = "FarmHouse",
-                PlayerTileX = bedTile.X,
-                PlayerTileY = bedTile.Y,
-                NpcTileX = bedTile.X + 1,
-                NpcTileY = bedTile.Y,
+                PlayerTileX = playerTile.X,
+                PlayerTileY = playerTile.Y,
+                NpcTileX = npcTile.X,
+                NpcTileY = npcTile.Y,
                 IntroSummary = introSummary
             };
         }
@@ -777,6 +808,24 @@ namespace ValleyTalk.Social
                 return;
             }
 
+            var targetLocation = Game1.getLocationFromName(scene.LocationName);
+            var playerTile = new Point(scene.PlayerTileX, scene.PlayerTileY);
+            var npcTile = new Point(scene.NpcTileX, scene.NpcTileY);
+            if (scene.SceneType != PostSocialSceneType.OutsideFight
+                && !this.TryResolveScenePair(targetLocation, playerTile, out playerTile, out npcTile))
+            {
+                scene = this.CreatePlayerBedroomPlan(scene.TargetNpcName, scene.IntroSummary);
+                targetLocation = Game1.getLocationFromName(scene.LocationName);
+                this.currentSession.PendingScene = scene;
+                playerTile = new Point(scene.PlayerTileX, scene.PlayerTileY);
+                npcTile = new Point(scene.NpcTileX, scene.NpcTileY);
+            }
+
+            scene.PlayerTileX = playerTile.X;
+            scene.PlayerTileY = playerTile.Y;
+            scene.NpcTileX = npcTile.X;
+            scene.NpcTileY = npcTile.Y;
+
             if (this.IsAtPlannedSceneLocation(scene))
             {
                 scene.TransitionQueued = false;
@@ -805,10 +854,13 @@ namespace ValleyTalk.Social
                 return;
             }
 
-            if (scene.NpcTileX < 0 || scene.NpcTileY < 0)
+            var location = Game1.getLocationFromName(scene.LocationName);
+            var npcTile = new Point(scene.NpcTileX, scene.NpcTileY);
+            if (!this.IsSceneTileUsable(location, npcTile))
             {
-                scene.NpcTileX = scene.PlayerTileX + 1;
-                scene.NpcTileY = scene.PlayerTileY;
+                npcTile = this.GetCompanionSceneTile(location, new Point(scene.PlayerTileX, scene.PlayerTileY));
+                scene.NpcTileX = npcTile.X;
+                scene.NpcTileY = npcTile.Y;
             }
 
             this.TryWarpNpc(npc, scene.LocationName, scene.NpcTileX, scene.NpcTileY);
@@ -1007,6 +1059,90 @@ namespace ValleyTalk.Social
                 this.monitor.Log("Saturday social sleep handoff fell back to NewDay: " + ex.Message, LogLevel.Warn);
                 return false;
             }
+        }
+
+        private bool TryResolveScenePair(GameLocation location, Point preferredPlayerTile, out Point playerTile, out Point npcTile)
+        {
+            playerTile = preferredPlayerTile;
+            npcTile = preferredPlayerTile;
+            if (location == null)
+            {
+                return false;
+            }
+
+            if (!this.IsSceneTileUsable(location, playerTile)
+                && !this.TryFindNearbyOpenTile(location, preferredPlayerTile, 2, out playerTile))
+            {
+                return false;
+            }
+
+            npcTile = this.GetCompanionSceneTile(location, playerTile);
+            return this.IsSceneTileUsable(location, npcTile);
+        }
+
+        private Point GetCompanionSceneTile(GameLocation location, Point anchorTile)
+        {
+            foreach (var offset in CompanionTileOffsets)
+            {
+                var candidate = new Point(anchorTile.X + offset.X, anchorTile.Y + offset.Y);
+                if (this.IsSceneTileUsable(location, candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return this.TryFindNearbyOpenTile(location, anchorTile, 3, out var nearbyTile)
+                ? nearbyTile
+                : new Point(anchorTile.X + 1, anchorTile.Y);
+        }
+
+        private bool TryFindNearbyOpenTile(GameLocation location, Point originTile, int radius, out Point tile)
+        {
+            tile = default;
+            if (location == null)
+            {
+                return false;
+            }
+
+            for (var distance = 0; distance <= radius; distance++)
+            {
+                for (var offsetY = -distance; offsetY <= distance; offsetY++)
+                {
+                    for (var offsetX = -distance; offsetX <= distance; offsetX++)
+                    {
+                        var candidate = new Point(originTile.X + offsetX, originTile.Y + offsetY);
+                        if (this.IsSceneTileUsable(location, candidate))
+                        {
+                            tile = candidate;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsSceneTileUsable(GameLocation location, Point tile)
+        {
+            if (location == null || location.Map == null || tile.X < 0 || tile.Y < 0)
+            {
+                return false;
+            }
+
+            var mapWidth = location.Map.DisplayWidth / Game1.tileSize;
+            var mapHeight = location.Map.DisplayHeight / Game1.tileSize;
+            if (tile.X >= mapWidth || tile.Y >= mapHeight)
+            {
+                return false;
+            }
+
+            if (location.characters.Any(character => character.TilePoint == tile))
+            {
+                return false;
+            }
+
+            return location.isTilePassable(new xTile.Dimensions.Location(tile.X, tile.Y), Game1.viewport);
         }
 
         private bool TryWarpNpc(NPC npc, string locationName, int tileX, int tileY)
