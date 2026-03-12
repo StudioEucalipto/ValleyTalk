@@ -46,6 +46,7 @@ namespace ValleyTalk.Social
         private readonly ModConfig config;
         private readonly IAttendanceService attendanceService;
         private readonly INpcProfileService profileService;
+        private readonly INpcBedroomPlacementService npcBedroomPlacementService;
         private readonly INpcNightStateService npcNightStateService;
         private readonly IPlacementPlanService placementPlanService;
         private readonly IAttendeeStagingService attendeeStagingService;
@@ -67,6 +68,7 @@ namespace ValleyTalk.Social
             ModConfig config,
             IAttendanceService attendanceService,
             INpcProfileService profileService,
+            INpcBedroomPlacementService npcBedroomPlacementService,
             INpcNightStateService npcNightStateService,
             IPlacementPlanService placementPlanService,
             IAttendeeStagingService attendeeStagingService,
@@ -82,6 +84,7 @@ namespace ValleyTalk.Social
             this.config = config;
             this.attendanceService = attendanceService;
             this.profileService = profileService;
+            this.npcBedroomPlacementService = npcBedroomPlacementService;
             this.npcNightStateService = npcNightStateService;
             this.placementPlanService = placementPlanService;
             this.attendeeStagingService = attendeeStagingService;
@@ -668,33 +671,32 @@ namespace ValleyTalk.Social
                 return true;
             }
 
-            var npc = Game1.getCharacterFromName(profile.Name);
-            var home = npc?.GetData()?.Home?.FirstOrDefault();
-            if (home == null || string.IsNullOrWhiteSpace(home.Location))
+            if (!this.npcBedroomPlacementService.TryGetPlacement(profile.Name, out var placement)
+                || string.IsNullOrWhiteSpace(placement.LocationName))
             {
                 scene = this.CreatePlayerBedroomPlan(profile.Name, "The night continued back at the farmhouse.");
                 return true;
             }
 
-            var bedTile = home.Tile;
-            if (bedTile.X <= 0 && bedTile.Y <= 0)
+            var playerTile = new Point(placement.PlayerTileX, placement.PlayerTileY);
+            var npcTile = new Point(placement.NpcTileX, placement.NpcTileY);
+            var homeLocation = Game1.getLocationFromName(placement.LocationName);
+            if (!this.TryResolveScenePair(homeLocation, playerTile, out playerTile, out var resolvedNpcTile))
             {
                 scene = this.CreatePlayerBedroomPlan(profile.Name, "The night continued back at the farmhouse.");
                 return true;
             }
 
-            var homeLocation = Game1.getLocationFromName(home.Location);
-            if (!this.TryResolveScenePair(homeLocation, bedTile, out var playerTile, out var npcTile))
+            if (!this.IsSceneTileUsable(homeLocation, npcTile))
             {
-                scene = this.CreatePlayerBedroomPlan(profile.Name, "The night continued back at the farmhouse.");
-                return true;
+                npcTile = resolvedNpcTile;
             }
 
             scene = new PostSocialScenePlan
             {
                 SceneType = PostSocialSceneType.NpcBedroomRomance,
                 TargetNpcName = profile.Name,
-                LocationName = home.Location,
+                LocationName = placement.LocationName,
                 PlayerTileX = playerTile.X,
                 PlayerTileY = playerTile.Y,
                 NpcTileX = npcTile.X,

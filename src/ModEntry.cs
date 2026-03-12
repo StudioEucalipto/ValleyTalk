@@ -191,6 +191,7 @@ namespace ValleyTalk
         private void InitializeSaturdaySocial(IModHelper helper)
         {
             var profileService = new NpcProfileService(helper, Monitor);
+            var npcBedroomPlacementService = new NpcBedroomPlacementService(helper, Monitor);
             var attendanceService = new AttendanceService(profileService);
             var npcNightStateService = new NpcNightStateService(profileService);
             var placementPlanService = new SaloonPlacementService(helper, Monitor);
@@ -209,6 +210,7 @@ namespace ValleyTalk
                 Config,
                 attendanceService,
                 profileService,
+                npcBedroomPlacementService,
                 npcNightStateService,
                 placementPlanService,
                 attendeeStagingService,
