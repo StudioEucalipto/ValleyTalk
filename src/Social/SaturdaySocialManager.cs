@@ -857,9 +857,12 @@ namespace ValleyTalk.Social
             Game1.globalFadeToBlack(() =>
             {
                 this.WarpPlayerHomeForSleep();
-                if (!this.TryInvokeStartSleep())
+                if (!this.TryStartBedSleep())
                 {
-                    Farmer.passOutFromTired(Game1.player);
+                    Game1.player.passedOut = false;
+                    Game1.player.isInBed.Value = true;
+                    Game1.player.sleptInTemporaryBed.Value = true;
+                    Game1.NewDay(0.0f);
                 }
             }, 0.02f);
         }
@@ -868,6 +871,7 @@ namespace ValleyTalk.Social
         {
             var bedTile = this.GetPlayerBedTile();
             Game1.warpFarmer("FarmHouse", bedTile.X, bedTile.Y, false);
+            Game1.player.currentLocation.lastTouchActionLocation = Utility.PointToVector2(bedTile);
         }
 
         private Point GetPlayerBedTile()
@@ -935,7 +939,7 @@ namespace ValleyTalk.Social
             }
         }
 
-        private bool TryInvokeStartSleep()
+        private bool TryStartBedSleep()
         {
             var location = Game1.player?.currentLocation;
             if (location == null)
@@ -943,14 +947,19 @@ namespace ValleyTalk.Social
                 return false;
             }
 
-            var startSleep = location.GetType().GetMethod("startSleep", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (startSleep == null || startSleep.GetParameters().Length != 0)
+            try
             {
+                Game1.player.passedOut = false;
+                Game1.player.isInBed.Value = true;
+                Game1.player.sleptInTemporaryBed.Value = true;
+                location.answerDialogueAction("Sleep_Yes", null);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                this.monitor.Log("Saturday social sleep handoff fell back to NewDay: " + ex.Message, LogLevel.Warn);
                 return false;
             }
-
-            startSleep.Invoke(location, null);
-            return true;
         }
 
         private bool TryWarpNpc(NPC npc, string locationName, int tileX, int tileY)
