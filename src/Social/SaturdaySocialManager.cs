@@ -177,6 +177,12 @@ namespace ValleyTalk.Social
                 return;
             }
 
+            if (scene.SceneType == PostSocialSceneType.PlayerBedroomRomance
+                || scene.SceneType == PostSocialSceneType.NpcBedroomRomance)
+            {
+                return;
+            }
+
             if (ticks - this.currentSession.LastFollowUpActivityTick < 15)
             {
                 return;
@@ -218,6 +224,14 @@ namespace ValleyTalk.Social
             if (isPlayerLine && this.currentSession?.Phase == SocialSessionPhase.FollowUpScene)
             {
                 this.currentSession.LastFollowUpActivityTick = Game1.ticks;
+            }
+
+            if (isPlayerLine
+                && this.currentSession?.Phase == SocialSessionPhase.FollowUpScene
+                && this.IsSleepRequest(dialogueText))
+            {
+                this.ResolveFollowUpScene(this.currentSession.PendingScene);
+                return;
             }
 
             if (isPlayerLine && this.conversationCommerceParser.TryParse(dialogueText, out var orderIntent))
@@ -779,6 +793,27 @@ namespace ValleyTalk.Social
                 default:
                     return "Outside the saloon, the fight never turned into a clean win for anyone before it got broken up.";
             }
+        }
+
+        private bool IsSleepRequest(string dialogueText)
+        {
+            if (string.IsNullOrWhiteSpace(dialogueText))
+            {
+                return false;
+            }
+
+            var normalized = dialogueText.ToLowerInvariant();
+            return normalized.Contains("go to sleep")
+                || normalized.Contains("let's sleep")
+                || normalized.Contains("lets sleep")
+                || normalized.Contains("go to bed")
+                || normalized.Contains("let's go to bed")
+                || normalized.Contains("lets go to bed")
+                || normalized.Contains("stay the night")
+                || normalized.Contains("turn in for the night")
+                || normalized.Contains("call it a night")
+                || normalized.Contains("get some sleep")
+                || normalized.Contains("sleep now");
         }
 
         private void BeginNightRest()
