@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "NpcName": "Harvey",
+    "LocationName": "HarveyRoom",
+    "PlayerTileX": 3,
+    "PlayerTileY": 9,
+    "NpcTileX": 4,
+    "NpcTileY": 9
+  },
+  {
+    "NpcName": "Sebastian",
+    "LocationName": "SebastianRoom",
+    "PlayerTileX": 3,
+    "PlayerTileY": 10,
+    "NpcTileX": 4,
+    "NpcTileY": 10
+  }
+]
