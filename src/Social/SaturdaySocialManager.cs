@@ -706,7 +706,7 @@ namespace ValleyTalk.Social
             var bedTile = this.GetPlayerBedTile();
             var farmhouse = Game1.getLocationFromName("FarmHouse");
             var playerTile = bedTile;
-            var npcTile = this.GetCompanionBedTile(farmhouse, bedTile);
+            var npcTile = this.GetFarmhouseCompanionBedTile(farmhouse, bedTile);
             if (!this.TryResolveRomanceScenePair(farmhouse, bedTile, npcTile, out playerTile, out npcTile))
             {
                 playerTile = bedTile;
@@ -980,6 +980,17 @@ namespace ValleyTalk.Social
             return new Point(9, 8);
         }
 
+        private Point GetFarmhouseCompanionBedTile(GameLocation location, Point playerBedTile)
+        {
+            if (this.TryFindCompanionBedTile(location, out var companionTile)
+                && companionTile != playerBedTile)
+            {
+                return companionTile;
+            }
+
+            return this.GetCompanionBedTile(location, playerBedTile);
+        }
+
         private bool TryFindBedTile(GameLocation location, out Point tile)
         {
             tile = default;
@@ -1003,6 +1014,45 @@ namespace ValleyTalk.Social
             }
 
             foreach (var propertyName in new[] { "playerBedSpot", "PlayerBedSpot", "BedSpot" })
+            {
+                var property = location.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (property == null)
+                {
+                    continue;
+                }
+
+                if (this.TryConvertToPoint(property.GetValue(location), out tile))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryFindCompanionBedTile(GameLocation location, out Point tile)
+        {
+            tile = default;
+            if (location == null)
+            {
+                return false;
+            }
+
+            foreach (var methodName in new[] { "getSpouseBedSpot", "GetSpouseBedSpot", "GetPartnerBedSpot", "getPartnerBedSpot" })
+            {
+                var method = location.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (method == null || method.GetParameters().Length != 0)
+                {
+                    continue;
+                }
+
+                if (this.TryConvertToPoint(method.Invoke(location, null), out tile))
+                {
+                    return true;
+                }
+            }
+
+            foreach (var propertyName in new[] { "spouseBedSpot", "SpouseBedSpot", "PartnerBedSpot" })
             {
                 var property = location.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (property == null)
