@@ -681,15 +681,10 @@ namespace ValleyTalk.Social
             var playerTile = new Point(placement.PlayerTileX, placement.PlayerTileY);
             var npcTile = new Point(placement.NpcTileX, placement.NpcTileY);
             var homeLocation = Game1.getLocationFromName(placement.LocationName);
-            if (!this.TryResolveScenePair(homeLocation, playerTile, out playerTile, out var resolvedNpcTile))
+            if (!this.TryResolveRomanceScenePair(homeLocation, playerTile, npcTile, out playerTile, out npcTile))
             {
                 scene = this.CreatePlayerBedroomPlan(profile.Name, "The night continued back at the farmhouse.");
                 return true;
-            }
-
-            if (!this.IsSceneTileUsable(homeLocation, npcTile))
-            {
-                npcTile = resolvedNpcTile;
             }
 
             scene = new PostSocialScenePlan
@@ -711,11 +706,11 @@ namespace ValleyTalk.Social
             var bedTile = this.GetPlayerBedTile();
             var farmhouse = Game1.getLocationFromName("FarmHouse");
             var playerTile = bedTile;
-            var npcTile = this.GetCompanionSceneTile(farmhouse, bedTile);
-            if (this.TryResolveScenePair(farmhouse, bedTile, out var resolvedPlayerTile, out var resolvedNpcTile))
+            var npcTile = this.GetCompanionBedTile(farmhouse, bedTile);
+            if (!this.TryResolveRomanceScenePair(farmhouse, bedTile, npcTile, out playerTile, out npcTile))
             {
-                playerTile = resolvedPlayerTile;
-                npcTile = resolvedNpcTile;
+                playerTile = bedTile;
+                npcTile = this.GetCompanionSceneTile(farmhouse, bedTile);
             }
 
             return new PostSocialScenePlan
@@ -1082,6 +1077,38 @@ namespace ValleyTalk.Social
             return this.IsSceneTileUsable(location, npcTile);
         }
 
+        private bool TryResolveRomanceScenePair(GameLocation location, Point preferredPlayerTile, Point preferredNpcTile, out Point playerTile, out Point npcTile)
+        {
+            playerTile = preferredPlayerTile;
+            npcTile = preferredNpcTile;
+            if (location == null)
+            {
+                return false;
+            }
+
+            if (this.IsSceneTileInBounds(location, preferredPlayerTile)
+                && this.IsSceneTileInBounds(location, preferredNpcTile))
+            {
+                return true;
+            }
+
+            return this.TryResolveScenePair(location, preferredPlayerTile, out playerTile, out npcTile);
+        }
+
+        private Point GetCompanionBedTile(GameLocation location, Point anchorTile)
+        {
+            foreach (var offset in CompanionTileOffsets)
+            {
+                var candidate = new Point(anchorTile.X + offset.X, anchorTile.Y + offset.Y);
+                if (this.IsSceneTileInBounds(location, candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return anchorTile;
+        }
+
         private Point GetCompanionSceneTile(GameLocation location, Point anchorTile)
         {
             foreach (var offset in CompanionTileOffsets)
@@ -1125,7 +1152,7 @@ namespace ValleyTalk.Social
             return false;
         }
 
-        private bool IsSceneTileUsable(GameLocation location, Point tile)
+        private bool IsSceneTileInBounds(GameLocation location, Point tile)
         {
             if (location == null || location.Map == null || tile.X < 0 || tile.Y < 0)
             {
@@ -1134,7 +1161,12 @@ namespace ValleyTalk.Social
 
             var mapWidth = location.Map.DisplayWidth / Game1.tileSize;
             var mapHeight = location.Map.DisplayHeight / Game1.tileSize;
-            if (tile.X >= mapWidth || tile.Y >= mapHeight)
+            return tile.X < mapWidth && tile.Y < mapHeight;
+        }
+
+        private bool IsSceneTileUsable(GameLocation location, Point tile)
+        {
+            if (!this.IsSceneTileInBounds(location, tile))
             {
                 return false;
             }

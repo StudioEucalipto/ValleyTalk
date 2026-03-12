@@ -11,8 +11,96 @@
     "NpcName": "Sebastian",
     "LocationName": "SebastianRoom",
     "PlayerTileX": 3,
-    "PlayerTileY": 10,
+    "PlayerTileY": 9,
     "NpcTileX": 4,
-    "NpcTileY": 10
+    "NpcTileY": 9
+  },
+  {
+    "NpcName": "Abigail",
+    "LocationName": "SeedShop",
+    "PlayerTileX": 24,
+    "PlayerTileY": 4,
+    "NpcTileX": 25,
+    "NpcTileY": 4
+  },
+  {
+    "NpcName": "Alex",
+    "LocationName": "JoshHouse",
+    "PlayerTileX": 4,
+    "PlayerTileY": 4,
+    "NpcTileX": 5,
+    "NpcTileY": 4
+  },
+  {
+    "NpcName": "Elliott",
+    "LocationName": "ElliottHouse",
+    "PlayerTileX": 12,
+    "PlayerTileY": 5,
+    "NpcTileX": 13,
+    "NpcTileY": 5
+  },
+  {
+    "NpcName": "Emily",
+    "LocationName": "HaleyHouse",
+    "PlayerTileX": 1,
+    "PlayerTileY": 4,
+    "NpcTileX": 2,
+    "NpcTileY": 4
+  },
+  {
+    "NpcName": "Haley",
+    "LocationName": "HaleyHouse",
+    "PlayerTileX": 20,
+    "PlayerTileY": 4,
+    "NpcTileX": 21,
+    "NpcTileY": 4
+  },
+  {
+    "NpcName": "Leah",
+    "LocationName": "LeahHouse",
+    "PlayerTileX": 2,
+    "PlayerTileY": 4,
+    "NpcTileX": 3,
+    "NpcTileY": 4
+  },
+  {
+    "NpcName": "Maru",
+    "LocationName": "ScienceHouse",
+    "PlayerTileX": 20,
+    "PlayerTileY": 4,
+    "NpcTileX": 21,
+    "NpcTileY": 4
+  },
+  {
+    "NpcName": "Penny",
+    "LocationName": "Trailer",
+    "PlayerTileX": 3,
+    "PlayerTileY": 9,
+    "NpcTileX": 4,
+    "NpcTileY": 9
+  },
+  {
+    "NpcName": "Penny",
+    "LocationName": "Trailer_big",
+    "PlayerTileX": 24,
+    "PlayerTileY": 17,
+    "NpcTileX": 25,
+    "NpcTileY": 17
+  },
+  {
+    "NpcName": "Sam",
+    "LocationName": "SamHouse",
+    "PlayerTileX": 21,
+    "PlayerTileY": 4,
+    "NpcTileX": 22,
+    "NpcTileY": 4
+  },
+  {
+    "NpcName": "Shane",
+    "LocationName": "AnimalShop",
+    "PlayerTileX": 1,
+    "PlayerTileY": 7,
+    "NpcTileX": 2,
+    "NpcTileY": 7
   }
 ]

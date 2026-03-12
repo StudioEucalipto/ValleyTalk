@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using StardewModdingAPI;
+using StardewValley;
 using ValleyTalk.Social.Models;
 
 namespace ValleyTalk.Social.Services
 {
     public class NpcBedroomPlacementService : INpcBedroomPlacementService
     {
-        private readonly Dictionary<string, NpcBedroomPlacement> placements;
+        private readonly Dictionary<string, List<NpcBedroomPlacement>> placements;
 
         public NpcBedroomPlacementService(IModHelper helper, IMonitor monitor, string relativeAssetPath = "assets/social/NpcBedroomPlacements.vanilla.json")
         {
@@ -24,12 +25,23 @@ namespace ValleyTalk.Social.Services
             this.placements = loadedPlacements
                 .Where(placement => !string.IsNullOrWhiteSpace(placement.NpcName))
                 .GroupBy(placement => placement.NpcName, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+                .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.OrdinalIgnoreCase);
         }
 
         public bool TryGetPlacement(string npcName, out NpcBedroomPlacement placement)
         {
-            return this.placements.TryGetValue(npcName, out placement);
+            placement = null!;
+            if (!this.placements.TryGetValue(npcName, out var candidates) || candidates.Count == 0)
+            {
+                return false;
+            }
+
+            placement = candidates.FirstOrDefault(candidate =>
+                !string.IsNullOrWhiteSpace(candidate.LocationName)
+                && Game1.getLocationFromName(candidate.LocationName) != null)
+                ?? candidates[0];
+
+            return placement != null;
         }
     }
 }
