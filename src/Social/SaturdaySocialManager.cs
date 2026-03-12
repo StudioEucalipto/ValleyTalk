@@ -809,9 +809,6 @@ namespace ValleyTalk.Social
                 || normalized.Contains("go to bed")
                 || normalized.Contains("let's go to bed")
                 || normalized.Contains("lets go to bed")
-                || normalized.Contains("stay the night")
-                || normalized.Contains("turn in for the night")
-                || normalized.Contains("call it a night")
                 || normalized.Contains("get some sleep")
                 || normalized.Contains("sleep now");
         }
