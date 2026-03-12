@@ -497,7 +497,7 @@ namespace ValleyTalk.Social
             bool isPlayerLine,
             InteractionOutcome outcome)
         {
-            if (!isPlayerLine || this.currentSession == null || this.currentSession.Phase != SocialSessionPhase.Saloon)
+            if (this.currentSession == null || this.currentSession.Phase != SocialSessionPhase.Saloon)
             {
                 return;
             }
@@ -518,13 +518,13 @@ namespace ValleyTalk.Social
                 return;
             }
 
-            if (this.TryCreatePlayerBedroomPlan(profile, nightState, relationshipContext, dialogueText, out var playerBedroomPlan))
+            if (this.TryCreatePlayerBedroomPlan(profile, nightState, relationshipContext, dialogueText, isPlayerLine, out var playerBedroomPlan))
             {
                 this.QueuePendingScene(playerBedroomPlan);
                 return;
             }
 
-            if (this.TryCreateNpcBedroomPlan(profile, nightState, relationshipContext, dialogueText, out var npcBedroomPlan))
+            if (this.TryCreateNpcBedroomPlan(profile, nightState, relationshipContext, dialogueText, isPlayerLine, out var npcBedroomPlan))
             {
                 this.QueuePendingScene(npcBedroomPlan);
             }
@@ -534,10 +534,12 @@ namespace ValleyTalk.Social
         {
             scene = null;
             var normalized = dialogueText.ToLowerInvariant();
-            if (!normalized.Contains("take this outside")
-                && !normalized.Contains("settle this outside")
-                && !normalized.Contains("outside right now")
-                && !normalized.Contains("meet me outside"))
+            if (!this.ContainsAny(normalized,
+                "take this outside",
+                "settle this outside",
+                "outside right now",
+                "meet me outside",
+                "see you outside"))
             {
                 return false;
             }
@@ -556,6 +558,7 @@ namespace ValleyTalk.Social
             NpcNightState nightState,
             SocialRelationshipContext relationshipContext,
             string dialogueText,
+            bool isPlayerLine,
             out PostSocialScenePlan scene)
         {
             scene = null;
@@ -565,13 +568,25 @@ namespace ValleyTalk.Social
             }
 
             var normalized = dialogueText.ToLowerInvariant();
-            if (!normalized.Contains("come home with me")
-                && !normalized.Contains("come back to my place")
-                && !normalized.Contains("come to my place")
-                && !normalized.Contains("come back to the farm")
-                && !normalized.Contains("come to the farm")
-                && !normalized.Contains("my room")
-                && !normalized.Contains("my bed"))
+            var matchesPlayerBedroomInvite = isPlayerLine
+                ? this.ContainsAny(normalized,
+                    "come home with me",
+                    "come back to my place",
+                    "come to my place",
+                    "come back to the farm",
+                    "come to the farm",
+                    "my room",
+                    "my bed",
+                    "back to the farmhouse")
+                : this.ContainsAny(normalized,
+                    "come back to your farm",
+                    "go back to your farm",
+                    "your place",
+                    "your room",
+                    "your bed",
+                    "your farmhouse");
+
+            if (!matchesPlayerBedroomInvite)
             {
                 return false;
             }
@@ -596,6 +611,7 @@ namespace ValleyTalk.Social
             NpcNightState nightState,
             SocialRelationshipContext relationshipContext,
             string dialogueText,
+            bool isPlayerLine,
             out PostSocialScenePlan scene)
         {
             scene = null;
@@ -612,13 +628,24 @@ namespace ValleyTalk.Social
             }
 
             var normalized = dialogueText.ToLowerInvariant();
-            if (!normalized.Contains("walk you home")
-                && !normalized.Contains("take you home")
-                && !normalized.Contains("go to your place")
-                && !normalized.Contains("back to your place")
-                && !normalized.Contains("your room")
-                && !normalized.Contains("your bed")
-                && !normalized.Contains("can i come home with you"))
+            var matchesNpcBedroomInvite = isPlayerLine
+                ? this.ContainsAny(normalized,
+                    "walk you home",
+                    "take you home",
+                    "go to your place",
+                    "back to your place",
+                    "your room",
+                    "your bed",
+                    "can i come home with you")
+                : this.ContainsAny(normalized,
+                    "come back to my place",
+                    "come to my place",
+                    "back to my place",
+                    "come home with me",
+                    "my room",
+                    "my bed");
+
+            if (!matchesNpcBedroomInvite)
             {
                 return false;
             }
@@ -641,6 +668,19 @@ namespace ValleyTalk.Social
                 IntroSummary = "The night continued back at " + profile.Name + "'s home."
             };
             return true;
+        }
+
+        private bool ContainsAny(string text, params string[] phrases)
+        {
+            foreach (var phrase in phrases)
+            {
+                if (text.Contains(phrase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool IsRomanceReady(NpcProfile profile, NpcNightState nightState, SocialRelationshipContext relationshipContext)
