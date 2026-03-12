@@ -13,6 +13,21 @@ namespace ValleyTalk.Social
     public class SaturdaySocialManager
     {
         private const int RelaxedLateEveningTime = 2200;
+        private static readonly HashSet<string> NpcBedroomEligibleSingles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Abigail",
+            "Alex",
+            "Elliott",
+            "Emily",
+            "Haley",
+            "Harvey",
+            "Leah",
+            "Maru",
+            "Penny",
+            "Sam",
+            "Sebastian",
+            "Shane"
+        };
 
         private readonly IMonitor monitor;
         private readonly ModConfig config;
@@ -591,18 +606,7 @@ namespace ValleyTalk.Social
                 return false;
             }
 
-            var bedTile = this.GetPlayerBedTile();
-            scene = new PostSocialScenePlan
-            {
-                SceneType = PostSocialSceneType.PlayerBedroomRomance,
-                TargetNpcName = profile.Name,
-                LocationName = "FarmHouse",
-                PlayerTileX = bedTile.X,
-                PlayerTileY = bedTile.Y,
-                NpcTileX = bedTile.X + 1,
-                NpcTileY = bedTile.Y,
-                IntroSummary = "The night continued back at the farmhouse."
-            };
+            scene = this.CreatePlayerBedroomPlan(profile.Name, "The night continued back at the farmhouse.");
             return true;
         }
 
@@ -616,13 +620,6 @@ namespace ValleyTalk.Social
         {
             scene = null;
             if (!this.IsRomanceReady(profile, nightState, relationshipContext))
-            {
-                return false;
-            }
-
-            var npc = Game1.getCharacterFromName(profile.Name);
-            var home = npc?.GetData()?.Home?.FirstOrDefault();
-            if (home == null || string.IsNullOrWhiteSpace(home.Location))
             {
                 return false;
             }
@@ -650,10 +647,25 @@ namespace ValleyTalk.Social
                 return false;
             }
 
+            if (!this.CanUseNpcBedroom(profile.Name, relationshipContext))
+            {
+                scene = this.CreatePlayerBedroomPlan(profile.Name, "The night continued back at the farmhouse.");
+                return true;
+            }
+
+            var npc = Game1.getCharacterFromName(profile.Name);
+            var home = npc?.GetData()?.Home?.FirstOrDefault();
+            if (home == null || string.IsNullOrWhiteSpace(home.Location))
+            {
+                scene = this.CreatePlayerBedroomPlan(profile.Name, "The night continued back at the farmhouse.");
+                return true;
+            }
+
             var bedTile = home.Tile;
             if (bedTile.X <= 0 && bedTile.Y <= 0)
             {
-                bedTile = new Point(3, 3);
+                scene = this.CreatePlayerBedroomPlan(profile.Name, "The night continued back at the farmhouse.");
+                return true;
             }
 
             scene = new PostSocialScenePlan
@@ -670,6 +682,22 @@ namespace ValleyTalk.Social
             return true;
         }
 
+        private PostSocialScenePlan CreatePlayerBedroomPlan(string npcName, string introSummary)
+        {
+            var bedTile = this.GetPlayerBedTile();
+            return new PostSocialScenePlan
+            {
+                SceneType = PostSocialSceneType.PlayerBedroomRomance,
+                TargetNpcName = npcName,
+                LocationName = "FarmHouse",
+                PlayerTileX = bedTile.X,
+                PlayerTileY = bedTile.Y,
+                NpcTileX = bedTile.X + 1,
+                NpcTileY = bedTile.Y,
+                IntroSummary = introSummary
+            };
+        }
+
         private bool ContainsAny(string text, params string[] phrases)
         {
             foreach (var phrase in phrases)
@@ -681,6 +709,25 @@ namespace ValleyTalk.Social
             }
 
             return false;
+        }
+
+        private bool CanUseNpcBedroom(string npcName, SocialRelationshipContext relationshipContext)
+        {
+            return NpcBedroomEligibleSingles.Contains(npcName)
+                && !this.IsPlayerPartneredWithNpc(relationshipContext);
+        }
+
+        private bool IsPlayerPartneredWithNpc(SocialRelationshipContext relationshipContext)
+        {
+            if (relationshipContext == null)
+            {
+                return false;
+            }
+
+            return string.Equals(relationshipContext.PlayerRelationshipStatus, "dating", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(relationshipContext.PlayerRelationshipStatus, "engaged", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(relationshipContext.PlayerRelationshipStatus, "married", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(relationshipContext.PlayerRelationshipStatus, "roommates", StringComparison.OrdinalIgnoreCase);
         }
 
         private bool IsRomanceReady(NpcProfile profile, NpcNightState nightState, SocialRelationshipContext relationshipContext)
