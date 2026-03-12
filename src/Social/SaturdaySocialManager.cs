@@ -536,7 +536,6 @@ namespace ValleyTalk.Social
             var normalized = dialogueText.ToLowerInvariant();
             if (!normalized.Contains("take this outside")
                 && !normalized.Contains("settle this outside")
-                && !normalized.Contains("step outside")
                 && !normalized.Contains("outside right now")
                 && !normalized.Contains("meet me outside"))
             {
@@ -978,6 +977,8 @@ namespace ValleyTalk.Social
             {
                 this.currentSession.RoomMood = this.roomMoodService.Recalculate(this.currentSession);
             }
+
+            this.RefreshSaloonScene();
         }
 
         private void RecordPrimaryAndObservedOutcomes(NpcProfile profile, SocialRelationshipContext relationshipContext, InteractionOutcome outcome)
@@ -990,6 +991,20 @@ namespace ValleyTalk.Social
             }
 
             this.currentSession.RoomMood = this.roomMoodService.Recalculate(this.currentSession);
+            this.RefreshSaloonScene();
+        }
+
+        private void RefreshSaloonScene()
+        {
+            if (this.currentSession == null
+                || this.currentSession.Phase != SocialSessionPhase.Saloon
+                || !this.IsSaloon(Game1.player?.currentLocation))
+            {
+                return;
+            }
+
+            this.currentSession.PlacementPlan = this.placementPlanService.BuildPlan(this.currentSession.Attendance, this.currentSession.NightStates);
+            this.attendeeStagingService.StageAttendees(this.currentSession);
         }
 
         private bool TryGetActiveParticipant(NPC npc, out NpcProfile profile, out NpcNightState nightState)
